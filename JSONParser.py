@@ -54,7 +54,8 @@ class JSONInputParser:
             
             valid = validJSON(self.inputJSON) #store validjson in a seperate object
             
-            self.runConversion(valid)
+            storeObject = self.runConversion(valid)
+            return storeObject
 
         except jsonschema.ValidationError as e:
             self.inputValidate = False
@@ -66,10 +67,9 @@ class JSONInputParser:
 
     def runConversion(self,validObject):
         converter = FSMConverter()
-        fsmObject = converter.toFSMObject(validObject)
-
+        storeObject = converter.toFSMObject(validObject)
+        return storeObject
         
-
     def getValid(self):
         return self.inputValidate
 

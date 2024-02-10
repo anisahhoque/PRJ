@@ -40,4 +40,9 @@ class FSMConverter:
         currFSM.acceptingStates.extend(acceptingNodes)
 
         [node.setAsAccepting() for node in acceptingNodes]
+
+        #for i in currFSM.states.values():
+            #print(i.transitions)
+            
+        return currFSM
         

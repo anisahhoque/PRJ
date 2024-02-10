@@ -1,7 +1,7 @@
 #TO DO:
 #string handle the objects
 from JSONParser import JSONInputParser
-
+from SugiyamaFramework import SugiyamaFramework
 data = {
   "states": [
     {
@@ -42,7 +42,7 @@ data = {
       "label": "Transition 3"
     },
     {
-      "from": "#0",
+      "from": "#2",
       "to": "#3",
       "label": "Transition 4"
     },
@@ -50,15 +50,22 @@ data = {
       "from": "#3",
       "to": "#4",
       "label": "Transition 5"
+    },
+    {
+      "from": "#4",
+      "to": "#0",
+      "label": "Transition 6"
     }
   ],
   "initialState": "#0",
-  "acceptingStates": ["#4"]
+  "acceptingStates": ["#2", "#4"]
 }
 
+
 parse = JSONInputParser(data)
-parse.validateJSON()
+store = parse.validateJSON() # our object
+print(store)
 print(parse.inputValidate)
-
-
+new = SugiyamaFramework(store)
+new.removeCycles()
 #print(parse.getTransitions())
