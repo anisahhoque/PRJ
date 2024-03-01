@@ -16,9 +16,9 @@ class JSONInputParser:
                                     "properties": {
                                     "id": {
                                         "type": "string",
-                                        "pattern": "^#\\d+$" # # followed by a number
+                                        "pattern": "^#\\d+$" 
                                     },
-                                    "name": { "type": "string" } # optional name
+                                    "name": { "type": "string" } 
                                     },
                                     "required": ["id"]
                                 }

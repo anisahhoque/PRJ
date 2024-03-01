@@ -18,6 +18,9 @@ class FSMData:
     def addTransition(self,transition):
         self.transitions.append(transition)
 
+    def removeTransition(self,transition):
+        self.transitions.remove(transition)
+        
     def removeSelfTransitions(self,transitions):
         pass
     
@@ -53,3 +56,5 @@ class FSMTransition:
         self.label = label
         self.fromState = fromState
         self.toState = toState
+
+

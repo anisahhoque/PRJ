@@ -3,37 +3,74 @@ class SugiyamaFramework:
         self.fsm = FSMData
         self.feedbackSet = {"lrDir":None, "reverseDir":None}
 
-    def edgeReversal(self):
-        pass
-    def removeCycles(self):
-        visited = {}  # Dictionary to keep track of visited nodes
+    def dfs(self, node, visited, path, cycles):
+        visited.add(node.id)
+        path.append(node.id)
 
-        def dfs(node, current_path):
-            if node in current_path:
-                # If the node is already in the current path, a cycle is found
-                return True
-            if node in visited:
-                # If the node has been visited, no need to explore it again
-                return False
+        for transition in node.transitions:
+            neighbor_id = transition.toState
+            if neighbor_id in visited:
+                cycle_start_index = path.index(neighbor_id)
+                cycle = path[cycle_start_index:]
+                cycles.append(cycle)
 
-            visited[node] = True
-            current_path.append(node)
+            else:
+                neighbor_node = self.fsm.states[neighbor_id]
+                self.dfs(neighbor_node, visited, path, cycles)
 
-            for transition in node.transitions:
-                if dfs(transition.toState, current_path):
-                    # If a cycle is found deeper in the recursion, return True
-                    return True
+        path.pop() 
 
-            current_path.pop()  # Remove the current node from the path
-            return False
+    def detectCycles(self):
+        visited = set()
+        cycles = []
+        for state_id, state in self.fsm.states.items():
+            if state_id not in visited:
+                self.dfs(state, visited, [], cycles)
+        return cycles
 
-        # Perform DFS for each node
-        for node in self.fsm.states:
-            if dfs(node, []):
-                return True
+    def edgeReversal(self, transition):
+        fromState = transition.fromState
+        toState = transition.toState
+        transition.fromState = toState
+        transition.toState = fromState
 
-        # No cycle found, return False
-        return False
-    #IMPLEMENT DFS
-    def findCycles(self):
-        pass
+    def returnTransitionsOfCycles(self, cycles):
+        #[['#0', '#1', '#2'], ['#0', '#1', '#2', '#3', '#4']]
+        cycleTransitions = []
+        for cycle in cycles:
+            print(cycle)
+            transitions = []
+            for i,nodeIDfrom in enumerate(cycle):
+                print(i)
+                print(nodeIDfrom)
+                nextI = (i + 1) % len(cycle)
+                transition = self.returnTransition(nodeIDfrom,cycle[nextI])
+                transitions.append(transition)
+            transitions.append(self.returnTransition(cycle[-1],cycle[0]))
+            cycleTransitions.append(transitions)
+        
+        return cycleTransitions
+    
+
+
+    def returnTransition(self, fromState, toState):
+        for i in self.fsm.transitions:
+            if i.fromState == fromState and i.toState == toState:
+                return i
+            
+
+    def removeByCommonTrans(self, cycleTransitions):
+        commonTransitions = []
+        for i in range(len(cycleTransitions)):
+            for j in range(i + 1, len(cycleTransitions)):
+                cycle1Transitions = set(cycleTransitions[i])
+                cycle2Transitions = set(cycleTransitions[j])
+                common = cycle1Transitions.intersection(cycle2Transitions)
+                commonTransitions.extend(list(common))
+        return commonTransitions
+    
+    def removeCycles(self, commonTransitions):
+        for i in commonTransitions:
+            pass
+        
+

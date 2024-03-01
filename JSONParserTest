@@ -1,0 +1,41 @@
+import unittest
+from your_module_name import JSONInputParser
+
+# Define a test case class
+class TestJSONInputParser(unittest.TestCase):
+    # Define a setup method to prepare for the tests
+    def setUp(self):
+        # Define valid and invalid JSON inputs for testing
+        self.valid_json = {
+            "states": [
+                {"id": "#0", "name": "State A"},
+                {"id": "#1", "name": "State B"},
+                {"id": "#2", "name": "State C"}
+            ],
+            "transitions": [
+                {"from": "#0", "to": "#1", "label": "Transition 1"},
+                {"from": "#1", "to": "#2", "label": "Transition 2"},
+                {"from": "#2", "to": "#0", "label": "Transition 3"}
+            ],
+            "initialState": "#0",
+            "acceptingStates": ["#2", "#3"]
+        }
+        self.invalid_json = {}  # Define invalid JSON input for testing
+
+    # Test case for validating valid JSON input
+    def test_valid_json(self):
+        parser = JSONInputParser(self.valid_json)
+        store_object = parser.validateJSON()
+        self.assertTrue(parser.getValid())
+        # Add assertions for the parsed store object if needed
+
+    # Test case for validating invalid JSON input
+    def test_invalid_json(self):
+        parser = JSONInputParser(self.invalid_json)
+        store_object = parser.validateJSON()
+        self.assertFalse(parser.getValid())
+        # Add assertions for the validation error message if needed
+
+# Define main method to run the tests
+if __name__ == '__main__':
+    unittest.main()
