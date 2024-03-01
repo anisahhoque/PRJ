@@ -15,13 +15,8 @@ def main():
   print(store)
   print(parse.inputValidate)
   new = SugiyamaFramework(store)
-  cycles = new.detectCycles()
-  print(cycles)
-  x = new.returnTransitionsOfCycles(cycles)
-  y = new.removeCycles(x)
-  for i in y:
-      print(i.fromState)
-      print(i.toState)
-      
+  while len(new.detectCycles()) > 0:
+      new.detectCycles()
+
 if __name__ == "__main__":
     main()
