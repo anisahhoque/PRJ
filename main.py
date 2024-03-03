@@ -9,7 +9,7 @@ def loadJSON(filename):
         return json.load(file)
 
 def main():    
-  data = loadJSON('input.json')
+  data = loadJSON('rhrh2.json')
   parse = JSONInputParser(data)
   store = parse.validateJSON() # our object
   print(store)

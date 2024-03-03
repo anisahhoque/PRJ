@@ -26,7 +26,7 @@ class FSMData:
     
 
 class FSMNode:
-    def __init__(self,idValue,name):
+    def __init__(self,idValue,name=""):
         self.id = idValue
         self.name = name
         self.transitions = []

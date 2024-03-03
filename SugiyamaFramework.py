@@ -1,4 +1,6 @@
-from FSMObject import FSMTransition
+from FSMObject import FSMTransition,FSMDummyNode
+
+import copy
 class SugiyamaFramework:
     def __init__(self,FSMData):
         self.fsm = FSMData
@@ -52,7 +54,18 @@ class SugiyamaFramework:
 
     def layerAssignment(self):
         sortedNodes = self.assignLayers()
-        self.identifyLongEdges(sortedNodes)
+        
+        storeLong = self.identifyLongEdges()
+        self.insertDummyVertices(storeLong)
+        for i in list(self.fsm.states.keys()):
+            print("NODE")
+            print(i)
+            print("layer")
+            print(self.fsm.states[i].layerValue)
+            print("trans")
+            for j in self.fsm.states[i].transitions:
+                print(j.toState)
+            print("----")
         #print(self.convert_to_tikz(layers=sortedNodes))
 
     def dfsForSort(self, node, visited, stack):
@@ -101,19 +114,54 @@ class SugiyamaFramework:
     def identifyLongEdges(self):
         storeLongEdges = []
         nodes = list(self.fsm.states.keys())
-        edges = self.fsm.transitions
+
         for i in nodes:
+            
             currLayerVal = self.fsm.states[i].layerValue
-            for j in edges:
+            
+            for j in self.fsm.states[i].transitions:
                 transLayerVal = self.fsm.states[j.toState].layerValue
                 if transLayerVal - currLayerVal > 1 :
                     storeLongEdges.append(j)
+   
+        
         return (storeLongEdges)
 
 
     def insertDummyVertices(self, longEdges):
-        
-        pass
+        dummyID = "#0"
+        counter = 0
+        for edge in longEdges:
+
+            self.fsm.transitions.remove(edge)
+
+            source = edge.fromState
+            end = edge.toState
+            sourceLayer = self.fsm.states[source].layerValue
+            endLayer = self.fsm.states[end].layerValue
+
+            self.fsm.states[source].transitions.remove(edge)
+            dummiesForEdge = [self.fsm.states[source]]
+            for dummyLayers in range(sourceLayer+1,endLayer):
+                counter += 1
+                newDummyID = dummyID + str(counter)
+                newDummy = FSMDummyNode(idValue=newDummyID,layerValue= dummyLayers)
+                self.fsm.states[newDummyID] = newDummy
+                dummiesForEdge.append(newDummy)
+
+            dummiesForEdge.append(self.fsm.states[end])
+            transitions = []
+            for i in range(len(dummiesForEdge) - 1):
+                fromNode = dummiesForEdge[i].id
+                toNode = dummiesForEdge[i + 1].id
+                transition = FSMTransition("",fromNode, toNode)
+                self.fsm.states[fromNode].addTransition(transition)
+                transitions.append(transition)
+            self.fsm.transitions.extend(transitions)
+            
+                
+            
+
 
 
 
