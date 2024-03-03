@@ -20,7 +20,7 @@ class FSMData:
 
     def removeTransition(self,transition):
         self.transitions.remove(transition)
-        
+
     def removeSelfTransitions(self,transitions):
         pass
     
@@ -34,6 +34,11 @@ class FSMNode:
         self.hasSelfTransition = False
         self.isInital = False
         self.isAccepting = False
+        self.layerValue = None
+        self.x = 0
+        self.y = 0
+        self.vertexPos = None
+        self.isDummy = False
 
     def addTransition(self, transition):
         #seperate the types of transitions

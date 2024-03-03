@@ -19,6 +19,14 @@
     {
       "id": "#4",
       "name": "State E"
+    },
+    {
+      "id": "#5",
+      "name": "State F"
+    },
+    {
+      "id": "#6",
+      "name": "State G"
     }
   ],
   "transitions": [
@@ -28,22 +36,31 @@
       "label": "Transition 1"
     },
     {
-      "from": "#1",
+      "from": "#0",
       "to": "#2",
       "label": "Transition 2"
     },
-
     {
-      "from": "#2",
+      "from": "#1",
       "to": "#3",
+      "label": "Transition 3"
+    },
+    {
+      "from": "#1",
+      "to": "#4",
       "label": "Transition 4"
     },
     {
-      "from": "#3",
-      "to": "#4",
+      "from": "#2",
+      "to": "#5",
       "label": "Transition 5"
+    },
+    {
+      "from": "#2",
+      "to": "#6",
+      "label": "Transition 6"
     }
   ],
   "initialState": "#0",
-  "acceptingStates": ["#2", "#4"]
+  "acceptingStates": ["#3", "#4", "#5", "#6"]
 }

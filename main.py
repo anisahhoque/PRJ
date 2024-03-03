@@ -9,7 +9,7 @@ def loadJSON(filename):
         return json.load(file)
 
 def main():    
-  data = loadJSON('input.json')
+  data = loadJSON('input2.json')
   parse = JSONInputParser(data)
   store = parse.validateJSON() # our object
   print(store)
@@ -17,6 +17,8 @@ def main():
   new = SugiyamaFramework(store)
   while len(new.detectCycles()) > 0:
       new.detectCycles()
+  print(new.feedbackSet)
+  new.layerAssignment()
 
 if __name__ == "__main__":
     main()
