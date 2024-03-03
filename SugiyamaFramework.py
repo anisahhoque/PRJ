@@ -52,7 +52,8 @@ class SugiyamaFramework:
 
     def layerAssignment(self):
         sortedNodes = self.assignLayers()
-        print(self.convert_to_tikz(layers=sortedNodes))
+        self.identifyLongEdges(sortedNodes)
+        #print(self.convert_to_tikz(layers=sortedNodes))
 
     def dfsForSort(self, node, visited, stack):
         visited.add(node)
@@ -78,18 +79,15 @@ class SugiyamaFramework:
         storeSort = self.topologicalSort()
         layers = {}  # Dictionary to store layers of nodes
         source = self.fsm.initialState.id  # Set the initial state as the source node
-
-
         layers[source] = 0
+        self.fsm.states[source].layerValue = 0
         #print(layers)
         storeSort.remove(source)
         for i in storeSort:
             #print("CURRENT NODE")
             #print(i)
-            
             #print("PREDECCESSORS")
             pred = self.findPredeccessors(i)
-
             #print(pred)
             predLayer = [layers[p] for p in pred]
             #print(predLayer)
@@ -100,6 +98,22 @@ class SugiyamaFramework:
         return(layers)
     
 
+    def identifyLongEdges(self):
+        storeLongEdges = []
+        nodes = list(self.fsm.states.keys())
+        edges = self.fsm.transitions
+        for i in nodes:
+            currLayerVal = self.fsm.states[i].layerValue
+            for j in edges:
+                transLayerVal = self.fsm.states[j.toState].layerValue
+                if transLayerVal - currLayerVal > 1 :
+                    storeLongEdges.append(j)
+        return (storeLongEdges)
+
+
+    def insertDummyVertices(self, longEdges):
+        
+        pass
 
 
 
@@ -108,11 +122,6 @@ class SugiyamaFramework:
 
 
 
-
-
-
-
-    
     
    
     def convert_to_tikz(self, layers, node_size=1):

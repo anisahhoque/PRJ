@@ -38,7 +38,6 @@ class FSMNode:
         self.x = 0
         self.y = 0
         self.vertexPos = None
-        self.isDummy = False
 
     def addTransition(self, transition):
         #seperate the types of transitions
@@ -54,6 +53,12 @@ class FSMNode:
 
     def setAsAccepting(self):
         self.isAccepting = True
+
+class FSMDummyNode(FSMNode):
+    def __init__(self, idValue, layerValue):
+        super().__init__(idValue)
+        self.layerValue = layerValue
+
 
 
 class FSMTransition:
