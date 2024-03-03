@@ -53,21 +53,52 @@ class SugiyamaFramework:
 
 
     def layerAssignment(self):
-        sortedNodes = self.assignLayers()
+        self.assignLayers()
         
         storeLong = self.identifyLongEdges()
         self.insertDummyVertices(storeLong)
-        for i in list(self.fsm.states.keys()):
-            print("NODE")
-            print(i)
-            print("layer")
-            print(self.fsm.states[i].layerValue)
-            print("trans")
-            for j in self.fsm.states[i].transitions:
-                print(j.toState)
-            print("----")
+        #for i in list(self.fsm.states.keys()):
+        #    print("NODE")
+        #    print(i)
+        #    print("layer")
+        #    print(self.fsm.states[i].layerValue)
+        #    print("trans")
+        #    for j in self.fsm.states[i].transitions:
+        #        print(j.toState)
+        #    print("----")
         #print(self.convert_to_tikz(layers=sortedNodes))
 
+        layers = {}
+        for node_id, node in self.fsm.states.items():
+            layer_value = node.layerValue
+            if layer_value not in layers:
+                layers[layer_value] = []
+
+            
+            layers[layer_value].append(node_id)
+            self.assignXCoords(nodeID=node_id,layer=layer_value)
+        return layers
+    
+    def assignXCoords(self,nodeID,layer):
+        self.fsm.states[nodeID].x = layer
+        
+    def assignYCoords(self,layers):
+        for layers in layers.values():
+
+            verticeCount = len(layers)
+            step = 1 / (verticeCount + 1)
+            yCoord = step 
+
+            for vertex in layers:
+                self.fsm.states[vertex].y= yCoord
+                yCoord += step
+    def vertexArrangement(self,layers):
+        self.assignYCoords(layers) #assign default values
+
+    
+    def getNeighboursInPreviousLayer(self,nodeID,layers):
+        previousLayer = self.fsm.states[nodeID]
+    
     def dfsForSort(self, node, visited, stack):
         visited.add(node)
         for transition in node.transitions:

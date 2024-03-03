@@ -18,7 +18,8 @@ def main():
   while len(new.detectCycles()) > 0:
       new.detectCycles()
   print(new.feedbackSet)
-  new.layerAssignment()
+  storelayers = new.layerAssignment()
+  new.vertexArrangement(storelayers)
 
 if __name__ == "__main__":
     main()
