@@ -1,10 +1,11 @@
 class FSMData:
     def __init__(self):
-        self.transitions = []
+        self.transitions = [] 
         self.states = {} #lookup with id
         self.initialState = None
-        self.acceptingStates = []
+        self.acceptingStates = [] #stores objects
         self.selfTransitions = []
+        self.longEdgeMap = {}
 
     def addState(self, state):
         self.states[state.id] = state
@@ -17,7 +18,8 @@ class FSMData:
 
     def addTransition(self,transition):
         self.transitions.append(transition)
-
+    def addSelfTransition(self,transition):
+        self.selfTransitions.append(transition)
     def removeTransition(self,transition):
         self.transitions.remove(transition)
 
