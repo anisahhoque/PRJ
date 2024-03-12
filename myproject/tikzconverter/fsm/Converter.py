@@ -1,4 +1,4 @@
-from FSMObject import FSMData, FSMNode, FSMTransition
+from .FSMObject import FSMData, FSMNode, FSMTransition
 class FSMConverter:
     def __init__(self):
         self.machine = FSMData()

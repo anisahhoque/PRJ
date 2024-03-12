@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My Django App</title>
+        <!-- Include Clipboard.js library -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+        <style>
+            /* CSS styles for the textarea box */
+            textarea {
+                width: 100%;
+                height: 300px; /* Adjust the height as needed */
+                resize: vertical; /* Allow vertical resizing */
+            }
+        </style>
+    </head>
+<body>
+    <h1>json to tikz</h1>
+    <p>tikz</p>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="json_file" accept=".json">
+        <button type="submit">Upload JSON File</button>
+    </form>
+    {% if tikzCode %}
+    <hr>
+    <h2>TikZ Code:</h2>
+    <!-- Include textarea for TikZ code -->
+    <textarea id="tikzCode" readonly>{{ tikzCode }}</textarea>
+    <!-- Add copy button -->
+    <button id="copyButton" data-clipboard-target="#tikzCode">Copy TikZ Code</button>
+    {% endif %}
+
+    <!-- Initialize Clipboard.js -->
+    <script>
+        var clipboard = new ClipboardJS('#copyButton');
+    </script>
+</body>
+</html>

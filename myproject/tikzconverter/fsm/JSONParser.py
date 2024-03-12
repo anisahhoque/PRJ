@@ -1,6 +1,6 @@
 import json
 import jsonschema 
-from Converter import FSMConverter
+from .Converter import FSMConverter
 
 class JSONInputParser:
     def __init__(self, inputJSON):

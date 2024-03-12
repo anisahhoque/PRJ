@@ -6,6 +6,7 @@ class FSMData:
         self.acceptingStates = [] #stores objects
         self.selfTransitions = []
         self.longEdgeMap = {}
+        self.dummyNodes = {}
 
     def addState(self, state):
         self.states[state.id] = state
