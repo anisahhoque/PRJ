@@ -77,5 +77,6 @@ class FSMTransition:
         self.label = label
         self.fromState = fromState
         self.toState = toState
+        self.typeDummy = False
 
 

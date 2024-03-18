@@ -23,6 +23,7 @@ class FSMConverter:
             toState = transition['to']
             label = transition['label']
             newTransition = FSMTransition(label=label,fromState=fromState,toState=toState)
+            newTransition.typeDummy = False
             if fromState == toState:
                 self.machine.addSelfTransition(newTransition)
             else:
