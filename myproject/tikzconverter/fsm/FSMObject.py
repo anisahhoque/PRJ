@@ -57,10 +57,18 @@ class FSMNode:
     def setAsAccepting(self):
         self.isAccepting = True
 
+    def setXCoord(self,x):
+        self.x = x
+    
+    def setYCoord(self,y):
+        self.y = y
+
 class FSMDummyNode(FSMNode):
     def __init__(self, idValue, layerValue):
         super().__init__(idValue)
         self.layerValue = layerValue
+
+
 
 
 
