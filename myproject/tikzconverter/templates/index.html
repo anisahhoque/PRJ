@@ -1,40 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>My Django App</title>
-        <!-- Include Clipboard.js library -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
-        <style>
-            /* CSS styles for the textarea box */
-            textarea {
-                width: 100%;
-                height: 300px; /* Adjust the height as needed */
-                resize: vertical; /* Allow vertical resizing */
-            }
-        </style>
-    </head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Django App</title>
+  <!-- Include Clipboard.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+  <!-- Include jQuery library -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    /* CSS styles for the textarea box */
+    textarea {
+      width: 100%;
+      height: 300px; /* Adjust the height as needed */
+      resize: vertical; /* Allow vertical resizing */
+    }
+  </style>
+</head>
 <body>
-    <h1>json to tikz</h1>
-    <p>tikz</p>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="file" name="json_file" accept=".json">
-        <button type="submit">Upload JSON File</button>
-    </form>
-    {% if tikzCode %}
-    <hr>
-    <h2>TikZ Code:</h2>
-    <!-- Include textarea for TikZ code -->
-    <textarea id="tikzCode" readonly>{{ tikzCode }}</textarea>
-    <!-- Add copy button -->
-    <button id="copyButton" data-clipboard-target="#tikzCode">Copy TikZ Code</button>
-    {% endif %}
-
-    <!-- Initialize Clipboard.js -->
-    <script>
-        var clipboard = new ClipboardJS('#copyButton');
-    </script>
+  <h1>json to tikz</h1>
+  <p>tikz</p>
+  <form id="tikzForm">
+    {% csrf_token %}
+    <label for="mode">Select Mode:</label>
+    <select name="mode" id="mode">
+      <option value="original" selected>Original</option>
+      <option value="compact">Compact</option>
+    </select>
+    <br><br>
+    <label for="repulsionwidth">Repulsion Width:</label>
+    <input type="number" name="repulsionwidth" id="repulsionwidth" value="{{ hyperparameters.repulsionwidth }}">
+    <br><br>
+    <label for="width">Width:</label>
+    <input type="number" name="width" id="width" value="{{ hyperparameters.width }}">
+    <br><br>
+    <label for="height">Height:</label>
+    <input type="number" name="height" id="height" value="{{ hyperparameters.height }}">
+    <br><br>
+    <input type="file" name="json_file" id="json_file" accept=".json">
+    <button type="submit">Generate TikZ Code</button>
+  </form>
+  <hr>
+  <h2>TikZ Code:</h2>
+  <!-- Include textarea for TikZ code -->
+  <textarea id="tikzCode" readonly>{{ tikzCode }}</textarea>
+  <!-- Add copy button -->
+  <button id="copyButton" data-clipboard-target="#tikzCode">Copy TikZ Code</button>
+  <!-- Initialize Clipboard.js -->
+  <script>
+    var clipboard = new ClipboardJS('#copyButton');
+  </script>
+  <script>
+    $(document).ready(function() {
+      $('#tikzForm').on('submit', function(event) {
+        event.preventDefault();
+        var formData = new FormData(this);
+        $.ajax({
+          url: '{% url "index" %}',
+          method: 'POST',
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function(response) {
+            $('#tikzCode').val(response.tikzCode);
+          },
+          error: function(xhr) {
+            console.log(xhr.responseText);
+          }
+        });
+      });
+    });
+  </script>
 </body>
 </html>

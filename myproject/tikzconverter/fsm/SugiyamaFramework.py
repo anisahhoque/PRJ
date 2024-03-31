@@ -8,8 +8,8 @@ class SugiyamaFramework:
     def __init__(self,FSMData):
         self.fsm = FSMData
         self.feedbackSet = []
-
-
+        self.y_step = 0
+        self.hyperparameters = {'repulsionwidth':2, 'width':4,'height':10}
 
 
     def dfs(self, node, visited, path, cycles):
@@ -54,7 +54,96 @@ class SugiyamaFramework:
         #reversedTransition = FSMTransition(label=transition.label, fromState=toState, toState=fromState)
         toNode.transitions.append(transition)
 
+    def layerAssignment4(self):
+        self.assignLayers()
+        
+        for i in self.feedbackSet:
+            self.edgeReversal(i)
 
+        storeLong = self.identifyLongEdges()
+        
+        self.insertDummyVertices(storeLong) 
+
+        layers = {}
+        for node_id, node in self.fsm.states.items():
+
+            layer_value = node.layerValue
+            if layer_value not in layers:
+                layers[layer_value] = []
+
+            
+            layers[layer_value].append(node_id)
+
+            self.assignXCoords(nodeID=node_id,layer=layer_value)
+
+        
+        self.assignGridCoords(layers)
+        return layers
+    
+    def assignGridCoords(self, layers):
+
+    
+        num_layers = len(layers)
+        max_nodes_in_layer = max(len(nodes) for nodes in layers.values())
+        total_height = 5
+        node_height = total_height / max_nodes_in_layer
+
+
+        for layer, nodes in layers.items():
+            num_nodes = len(nodes)
+            layer_height = total_height
+            y = (total_height - layer_height) / 1 # Center the nodes vertically within the layer
+            for node_id in nodes:
+                # Assign the same y-coordinate to all nodes in the layer
+                self.fsm.states[node_id].y = y
+                y += node_height + 1
+
+        longest_list = max(layers.values(), key=len)
+        coords = [round(self.fsm.states[x].y,2) for x in longest_list]
+
+           
+            
+        self.applyHeuristic(layers,coords)
+        return layers
+
+    def applyHeuristic(self, layers, valid_coords):
+        for layer, nodes in layers.items():
+            sorted_nodes = self.barycenter_heuristic(nodes, layers)
+            for i, node_id in enumerate(sorted_nodes):
+                node = self.fsm.states[node_id]
+                if i < len(valid_coords):
+                    node.y = valid_coords[i]
+                else:
+                    node.y = valid_coords[-1] + (i - len(valid_coords) + 1) * (valid_coords[1] - valid_coords[0])
+
+        return layers
+ 
+    
+    def barycenter_heuristic(self, layer, layers):
+        barycenter_values = {}
+
+        for node_id in layer:
+            node = self.fsm.states[node_id]
+            prev_layer = layers.get(node.layerValue - 1, [])
+            next_layer = layers.get(node.layerValue + 1, [])
+
+            prev_positions = [self.fsm.states[prev_node_id].y for prev_node_id in prev_layer if prev_node_id in self.fsm.states]
+            next_positions = [self.fsm.states[next_node_id].y for next_node_id in next_layer if next_node_id in self.fsm.states]
+
+            if prev_positions and next_positions:
+                barycenter = (sum(prev_positions) + sum(next_positions)) / (len(prev_positions) + len(next_positions))
+            elif prev_positions:
+                barycenter = sum(prev_positions) / len(prev_positions)
+            elif next_positions:
+                barycenter = sum(next_positions) / len(next_positions)
+            else:
+                barycenter = 0
+
+            barycenter_values[node_id] = barycenter
+
+        sorted_nodes = sorted(layer, key=lambda node_id: barycenter_values[node_id])
+        return sorted_nodes
+    
 
     def layerAssignment(self):
         self.assignLayers()
@@ -62,7 +151,9 @@ class SugiyamaFramework:
         for i in self.feedbackSet:
             self.edgeReversal(i)
 
-
+        #storeLong = self.identifyLongEdges()
+        
+        #self.insertDummyVertices(storeLong) 
 
         layers = {}
         for node_id, node in self.fsm.states.items():
@@ -98,41 +189,30 @@ class SugiyamaFramework:
             self.assignXCoords(nodeID=node_id,layer=layer_value)
             
 
-    
-    def assignDummyYCoords(self,dummyNode):
-        pass
-        dummyNode.setYCoord(dummyNode.layerValue)
-        
-    def assignDummyXCoords(self):
-        pass
-    
+
     def assignXCoords(self,nodeID,layer):
-        self.fsm.states[nodeID].setXCoord(layer*2)
+        self.fsm.states[nodeID].setXCoord(layer*self.hyperparameters['width'])
         
     def assignYCoords(self,layers):
         for layers in layers.values():
 
             verticeCount = len(layers)
-            step = 5/ (verticeCount + 1)
+            step = self.hyperparameters['height'] / (verticeCount + 1)
             yCoord = round(step,1)
 
             for vertex in layers:
                 self.fsm.states[vertex].setYCoord(yCoord)
                 yCoord += step
 
-
-    def vertexArrangement(self,layers):
+    def vertexArrangement4(self,layers):
         
-        self.assignYCoords(layers) #assign default values
         
-        for layer in list(layers.values()):
-            self.repulse(layer,2)
-        for i in range(23): #special iteration number
+        for i in range(23):
             for layer in list(layers.values()):
                 degrees = {}
                 for vertex in layer:
                     
-                    if type(self.fsm.states[vertex]) is (FSMNode):
+                    #if type(self.fsm.states[vertex]) is (FSMNode):
                         
                         if self.fsm.states[vertex].layerValue == 0:
                             neighbours = self.getNeighboursInNextLayer(vertex, layers)
@@ -146,21 +226,118 @@ class SugiyamaFramework:
 
                         
                         degrees[vertex] = len(neighbours)
-                self.minimum_degree_ordering(layer,degrees)
+                max_nodes = max((len(x) for x in layers.values()))
+                self.minimum_degree_ordering(layer,degrees,max_nodes)
+                
 
-                        #calculateBary = self.calculateBary(neighbours)
-#
-                        #if calculateBary == 0:
-                        #    pass
-                        #else:
-                        #    self.setVertexPos(vertex, calculateBary)
+
+    def minimum_degree_ordering4(self, layer, degrees,max_node):
+
+    #   
+        sorted_nodes = sorted(layer, key=lambda node_id: degrees[node_id])
+        center_y = (max_node- len(layer)) / 2 * self.y_step + self.y_step
+
+        # Assign new y-coordinates to nodes based on the minimum degree ordering
+        y = center_y - (len(layer) / 2) * self.y_step
+        for node_id in sorted_nodes:
+            node = self.fsm.states[node_id]
+            node.y = y
+            y += self.y_step
+
+        return sorted_nodes
+        
+    def vertexArrangement(self,layers):
+        
+        self.assignYCoords(layers) #assign default values
+        
+
+        for i in range(23): #special iteration number
+            for layer in list(layers.values()):
+                degrees = {}
+                for vertex in layer:
+                    
+                    #if type(self.fsm.states[vertex]) is (FSMNode):
+                        
+                        if self.fsm.states[vertex].layerValue == 0:
+                            neighbours = self.getNeighboursInNextLayer3(vertex, layers)
+                        elif self.fsm.states[vertex].layerValue == max(list(layers.keys())):
+                            neighbours = self.getNeighboursInPreviousLayer3(vertex, layers)
+                        else:
+                            neighbours = self.getNeighboursInPreviousLayer3(vertex, layers)
+                            neighbours2 = self.getNeighboursInNextLayer3(vertex, layers)
+                            neighbours.extend(neighbours2)
+
+
+                        
+                        degrees[vertex] = len(neighbours)
+                #self.minimum_degree_ordering(layer,degrees)
+
+                        calculateBary = self.calculateBary(neighbours)
+##
+                        if calculateBary == 0:
+                            pass
+                        else:
+                            self.setVertexPos(vertex, calculateBary)
                 
                 self.repulse(layer,1)
-
+        storeLong = self.identifyLongEdges()
         
-     
-        self.dummyArrangement()
-        self.assign_dummy_positions()
+        self.insertDummyVertices(storeLong) 
+        layers = {}
+        for node_id, node in self.fsm.dummyNodes.items():
+
+            layer_value = node.layerValue
+            if layer_value not in layers:
+                layers[layer_value] = []
+
+            
+            layers[layer_value].append(node_id)
+
+            self.assignXCoords(nodeID=node_id,layer=layer_value)
+
+        longest_list = max(layers.values(), key=len)
+        coords = [round(self.fsm.states[x].y, 2) for x in longest_list]
+        center_coord = sum(coords) / len(coords)
+
+        # Sort the coords based on their distance from the center
+        coords.sort(key=lambda coord: abs(coord - center_coord))
+
+        used_coords = {}  # Dictionary to keep track of used coordinates
+
+        # Iterate over each layer
+        for layer in layers.values():
+            # Sort the nodes in the layer based on their y coordinate
+            layer.sort(key=lambda node_id: self.fsm.states[node_id].y)
+
+            # Iterate over each node in the layer
+            for node_id in layer:
+                # Find the closest coordinate from the coords array
+                closest_coord = min(coords, key=lambda coord: abs(coord - self.fsm.states[node_id].y))
+
+                # Ensure no two nodes get the same coordinate
+                if closest_coord in used_coords:
+                    # Find the next closest unused coordinate
+                    for offset in [0.01, -0.01, 0.02, -0.02, 0.03, -0.03, 0.04, -0.04]:  # Adjust as needed
+                        new_coord = round(closest_coord + offset, 2)
+                        if new_coord not in used_coords:
+                            closest_coord = new_coord
+                            break
+
+                # Assign the closest coordinate to the node
+                used_coords[closest_coord] = True
+                self.fsm.states[node_id].y = closest_coord
+
+        # Assign remaining coordinates to dummy nodes
+        dummy_nodes = [node_id for layer in layers.values() for node_id in layer if isinstance(self.fsm.states[node_id], FSMDummyNode)]
+        remaining_coords = [coord for coord in coords if coord not in used_coords]
+
+        for node_id in dummy_nodes:
+            if remaining_coords:
+                coord = remaining_coords.pop(0)  # Take the first remaining coordinate
+                self.fsm.states[node_id].y = coord
+        
+        #self.dummyArrangement()
+        #self.assign_dummy_positions()
 
     def minimum_degree_ordering(self, layer, degrees):
         # Sort the nodes in the layer based on their degrees in ascending order
@@ -176,15 +353,18 @@ class SugiyamaFramework:
         for long_edge, dummy_nodes in self.fsm.longEdgeMap.items():
             source_node = self.fsm.states[long_edge.fromState]
             target_node = self.fsm.states[long_edge.toState]
-
+            print(self.fsm.states["#0"].y)
             # Calculate the initial y-position for dummy vertices
 
-            dummy_y = ((source_node.y + target_node.y) / 2) + 0.5
+            dummy_y = ((source_node.y + target_node.y) / 2) + 1
 
             # Check for conflicts with other nodes
-            while self.check_y_conflict(dummy_y):
+            while self.check_y_conflict(dummy_y)[0]:
                 # Adjust the y-position until there is no conflict
-                dummy_y += 1
+                if dummy_y > 10/2 :
+                    dummy_y += 0.3
+                else:
+                    dummy_y -= 0.3
 
             # Assign positions to dummy vertices
             for dummy_node in dummy_nodes[1:-1]:  # Exclude source and target nodes
@@ -193,9 +373,11 @@ class SugiyamaFramework:
     def check_y_conflict(self, y):
         for node in self.fsm.states.values():
             
-            if node.y == y and type(node) is FSMNode :
-                return True
-        return False
+            
+            if abs(node.y - y) < 1 and type(node) is FSMNode:
+                return [True, node.y - y]
+
+        return [False]
 
     def compile(self,tikzCode):
         with open('temp.tex', 'w') as f:
@@ -226,7 +408,7 @@ class SugiyamaFramework:
         for i in range(1, n):
             prev_vertex = layer[i - 1]
             curr_vertex = layer[i]
-            width = 2
+            width = self.hyperparameters['repulsionwidth']
             overlap = prev_vertex.y + width/ 2 + width / 2 - curr_vertex.y + separate
             if overlap > 0:
                 displacement = overlap / 2
@@ -247,7 +429,7 @@ class SugiyamaFramework:
             return 0
         total = 0
         for i in neighbours:
-            if type(self.fsm.states[i]) is (FSMNode):
+            #if type(self.fsm.states[i]) is (FSMNode):
                 total += self.fsm.states[i].y
                 
         position = total/len(neighbours)
@@ -265,12 +447,12 @@ class SugiyamaFramework:
         
         tikz_code.append(r"\documentclass{standalone}")
         tikz_code.append(r"\usepackage{tikz}")
-        tikz_code.append(r"\usetikzlibrary{automata}")  # Add automata library
+        tikz_code.append(r"\usetikzlibrary{automata,positioning}")  # Add automata and positioning libraries
         tikz_code.append(r"\begin{document}")
         #tikz_code.append(r"\begin{tikzpicture}[->,>=stealth,auto,node distance=2.5cm,semithick]")
         tikz_code.append(r"\begin{tikzpicture}[->,>=stealth,auto,node distance=2.5cm,semithick,every state/.style={minimum width=1cm, minimum height=1cm, text width=0.75cm,align=center}]")
 
-    
+
         # Generate nodes
         for node_id, node in self.fsm.states.items():
             x = node.x
@@ -297,16 +479,16 @@ class SugiyamaFramework:
         for long_edge, dummy_nodes in self.fsm.longEdgeMap.items():
             source_node = self.fsm.states[long_edge.fromState]
             target_node = self.fsm.states[long_edge.toState]
-            transition_label = long_edge.label
+            transition_label = long_edge.label[:3]
 
             if abs(source_node.layerValue - target_node.layerValue) == 1:
                 # Edge spans only one layer, use a regular curved arrow
                 if source_node.layerValue < target_node.layerValue:
                     # Forward edge (left to right)
-                    tikz_code.append(f"\\draw[->, rounded corners=5pt] ({source_node.id.lstrip('#')}) to[bend left=30] node[midway, above] {{}} ({target_node.id.lstrip('#')});")
+                    tikz_code.append(f"\\draw[->, rounded corners=15pt] ({source_node.id.lstrip('#')}) to[bend left=30] node[midway, sloped, above] {{{transition_label}}} ({target_node.id.lstrip('#')});")
                 else:
                     # Backward edge (right to left)
-                    tikz_code.append(f"\\draw[->, rounded corners=5pt] ({source_node.id.lstrip('#')}) to[bend right=30] node[midway, above] {{}} ({target_node.id.lstrip('#')});")
+                    tikz_code.append(f"\\draw[->, rounded corners=15pt] ({source_node.id.lstrip('#')}) to[bend right=30] node[midway, sloped, above] {{{transition_label}}} ({target_node.id.lstrip('#')});")
             else:
                 # Edge spans multiple layers, use dummy nodes
                 # Generate the edge path using dummy node positions
@@ -324,12 +506,12 @@ class SugiyamaFramework:
                     edge_path += f" -- ({target_node.id.lstrip('#')})"
 
                 # Add the edge path to the TikZ code with curved corners
-                tikz_code.append(f"\\draw[->, rounded corners=15pt] {edge_path} node[midway, above] {{}};")
+                tikz_code.append(f"\\draw[->, rounded corners=0pt] {edge_path} node[midway, sloped, above] {{{transition_label}}};")
+
         # Generate edges
         for transition in self.fsm.transitions:
-            print(transition.typeDummy)
+            label = transition.label[:3]
             if transition.typeDummy == True:
-                
                 continue
             elif transition.typeDummy == False:
                 from_node = transition.fromState
@@ -340,23 +522,17 @@ class SugiyamaFramework:
                 fromN = transition.fromState.lstrip('#')
                 toN= transition.toState.lstrip('#')
 
-    
-
-                tikz_code.append(f"\\path ({fromN}) edge node {{}} ({toN});")
-
-
-
-       
+                tikz_code.append(f"\\path ({fromN}) edge node[midway, sloped, above] {{{label}}} ({toN});")
         
         for transition in self.fsm.selfTransitions:
             from_node = transition.fromState.lstrip('#')
             to_node = transition.toState.lstrip('#')
+            label = transition.label[:3]
             if from_node == to_node:  # Self-transition
-                tikz_code.append(f"\\draw[->, loop above] ({from_node}) to ({to_node});")
+                tikz_code.append(f"\\draw[->, loop above] ({from_node}) to node[sloped, above] {{{label}}} ({to_node});")
             else:
-                tikz_code.append(f"\\draw[->] ({from_node}) -- ({to_node});")
+                tikz_code.append(f"\\draw[->] ({from_node}) -- node[midway, sloped, above] {{{label}}} ({to_node});")
 
-       
         tikz_code.append(r"\end{tikzpicture}")
         tikz_code.append(r"\end{document}")
 
@@ -528,43 +704,6 @@ class SugiyamaFramework:
         return(predeccessors)
                 
 
-    def returnTransitionsOfCycles(self, cycles):
-        #[['#0', '#1', '#2'], ['#0', '#1', '#2', '#3', '#4']]
-        cycleTransitions = []
-        for cycle in cycles:
-            print(cycle)
-            transitions = []
-            for i,nodeIDfrom in enumerate(cycle):
-                print(i)
-                print(nodeIDfrom)
-                nextI = (i + 1) % len(cycle)
-                transition = self.returnTransition(nodeIDfrom,cycle[nextI])
-                transitions.append(transition)
-            transitions.append(self.returnTransition(cycle[-1],cycle[0]))
-            cycleTransitions.append(transitions)
-        
-        return cycleTransitions
-    
 
 
-    def returnTransition(self, fromState, toState):
-        for i in self.fsm.transitions:
-            if i.fromState == fromState and i.toState == toState:
-                return i
-            
-
-    def removeByCommonTrans(self, cycleTransitions):
-        commonTransitions = []
-        for i in range(len(cycleTransitions)):
-            for j in range(i + 1, len(cycleTransitions)):
-                cycle1Transitions = set(cycleTransitions[i])
-                cycle2Transitions = set(cycleTransitions[j])
-                common = cycle1Transitions.intersection(cycle2Transitions)
-                commonTransitions.extend(list(common))
-        return commonTransitions
-    
-    def removeCycles(self, commonTransitions):
-        for i in commonTransitions:
-            pass
-        
 
