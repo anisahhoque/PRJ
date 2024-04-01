@@ -6,26 +6,6 @@ def loadJSON(fileContent):
     return json.loads(fileContent)
 
 
-
-def main2(fileName, mode):
-    data = loadJSON(fileName)
-    parse = JSONInputParser(data)
-    store = parse.validateJSON()
-    storeFramework = SugiyamaFramework(store)
-    while len(storeFramework.detectCycles()) > 0:
-        storeFramework.detectCycles()
-
-    if mode == 'original':
-        storelayers = storeFramework.layerAssignment4()
-    elif mode == 'compact':
-        storelayers = storeFramework.layerAssignment()
-    else:
-        raise ValueError(f"Invalid mode: {mode}")
-
-    storeFramework.vertexArrangement(storelayers)
-    tikzCode = storeFramework.generate_tikz_code()
-    return tikzCode
-
 def main(fileName, mode, hyperparameters):
     data = loadJSON(fileName)
     parse = JSONInputParser(data)
@@ -50,4 +30,5 @@ def main(fileName, mode, hyperparameters):
 
     storeFramework.vertexArrangement(storelayers)
     tikzCode = storeFramework.generate_tikz_code()
+    storeFramework.compile_tikz(tikzCode)
     return tikzCode

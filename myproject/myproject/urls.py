@@ -16,11 +16,17 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from tikzconverter import views
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 urlpatterns = [
     path('', views.index, name='index'),  # Define a URL pattern for the root URL
     path('admin/', admin.site.urls),  # URL pattern for the admin interface
     path('tikzconverter/', include('tikzconverter.urls')),  # Include the URLs for your TikzConverter app
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

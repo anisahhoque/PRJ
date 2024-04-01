@@ -4,6 +4,9 @@ import copy
 import math
 import subprocess
 import random
+import numpy as np
+import matplotlib.pyplot as plt
+from django.conf import settings
 class SugiyamaFramework:
     def __init__(self,FSMData):
         self.fsm = FSMData
@@ -378,17 +381,61 @@ class SugiyamaFramework:
                 return [True, node.y - y]
 
         return [False]
-
-    def compile(self,tikzCode):
+    
+    def compile_tikz1(self,tikz_code, output_file='output.pdf'):
+        
+        if os.path.exists(output_file):
+            os.remove(output_file)
+        
+        # Create a temporary TeX file with the TikZ code
         with open('temp.tex', 'w') as f:
-            f.write(tikzCode)
-
-        subprocess.run(['pdflatex', 'temp.tex'])
-
+            print(type(tikz_code))
+            f.write(tikz_code)
         
-        subprocess.run(['rm', 'temp.tex', 'temp.aux', 'temp.log', 'temp.pdf'])
+        try:
+            # Compile the TeX file to PDF
+            subprocess.run(['pdflatex', '-interaction=nonstopmode', 'temp.tex'], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error compiling TikZ code: {e}")
+            return
         
+        # Check if temp.pdf was successfully generated
+        if os.path.exists('temp.pdf'):
+            # Move the generated PDF file to the desired output name
+            subprocess.run(['mv', 'temp.pdf', output_file], check=True)
+            print(f"TikZ code compiled to {output_file}")
+        else:
+            print("Error: temp.pdf file not generated.")
+        
+    def compile_tikz(self, tikz_code, output_file='output.pdf'):
+        # Path to the media folder
+        media_folder = settings.MEDIA_ROOT
 
+        # Remove existing output file in the media folder
+        output_file_path = os.path.join(media_folder, output_file)
+        if os.path.exists(output_file_path):
+            os.remove(output_file_path)
+
+        # Create a temporary TeX file with the TikZ code in the media folder
+        temp_tex_path = os.path.join(media_folder, 'temp.tex')
+        with open(temp_tex_path, 'w') as f:
+            f.write(tikz_code)
+        
+        try:
+            # Compile the TeX file to PDF in the media folder
+            subprocess.run(['pdflatex', '-interaction=nonstopmode', temp_tex_path], check=True, cwd=media_folder)
+        except subprocess.CalledProcessError as e:
+            print(f"Error compiling TikZ code: {e}")
+            return
+        
+        # Check if temp.pdf was successfully generated in the media folder
+        temp_pdf_path = os.path.join(media_folder, 'temp.pdf')
+        if os.path.exists(temp_pdf_path):
+            # Move the generated PDF file to the desired output name in the media folder
+            subprocess.run(['mv', temp_pdf_path, output_file_path], check=True)
+            print(f"TikZ code compiled to {output_file}")
+        else:
+            print("Error: temp.pdf file not generated.")
 
     def repulse(self,layer, separate):
         new = []
