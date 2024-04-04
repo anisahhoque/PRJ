@@ -6,18 +6,18 @@ class FSMConverter:
 
 
     def toFSMObject(self, validJSON):
+        #obtain information from json file
         nodes = validJSON.getStates()
         edges = validJSON.getTransitions()
         acceptingStates = validJSON.getAcceptingStates() #stores id of acceptances
         initState = validJSON.getInitialState() #stores only id 
         
+
+        #store nodes in the dictionary, 
         for state in nodes:
             stateId = state['id']
-            try:
-                stateName = state['name']
-            except KeyError:
-                stateName = ""
-            newNode = FSMNode(idValue = stateId, name = stateName)
+
+            newNode = FSMNode(idValue = stateId)
             self.machine.addState(newNode)
 
         for transition in edges:
@@ -49,6 +49,3 @@ class FSMConverter:
 
         return currFSM
     
-    def checkValidFSM(self, FSMObject):
-        pass
-        

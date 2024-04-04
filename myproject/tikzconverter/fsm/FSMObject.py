@@ -32,12 +32,17 @@ class FSMData:
 
     def addDummyNode(self,dummy):
         self.dummyNodes[dummy.id] = dummy
+
+    def getInitial(self):
+        return self.initialState
+    
+    def getStates(self):
+        return self.states
     
 
 class FSMNode:
-    def __init__(self,idValue,name=""):
+    def __init__(self,idValue):
         self.id = idValue
-        self.name = name
         self.transitions = []
         self.selfTransitions = []
         self.hasSelfTransition = False

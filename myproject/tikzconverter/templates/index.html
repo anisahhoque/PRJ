@@ -54,32 +54,34 @@
   <script>
     var clipboard = new ClipboardJS('#copyButton');
   </script>
-  <script>
-    $(document).ready(function() {
-      $('#tikzForm').on('submit', function(event) {
-        event.preventDefault();
-        var fileInput = $('#json_file')[0].files[0];
-        if (!fileInput || fileInput.type !== 'application/json') {
-          alert('Please select a valid JSON file.');
-          return;
+<!-- ... -->
+<script>
+  $(document).ready(function() {
+    $('#tikzForm').on('submit', function(event) {
+      event.preventDefault();
+      var fileInput = $('#json_file')[0].files[0];
+      if (!fileInput || fileInput.type !== 'application/json') {
+        alert('Please select a JSON file.');
+        return;
+      }
+      var formData = new FormData(this);
+      $.ajax({
+        url: '{% url "index" %}',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+          $('#tikzCode').val(response.tikzCode);
+          $('#pdf').attr('src','media/output.pdf');
+        },
+        error: function(xhr) {
+          alert(xhr.responseJSON.error);
         }
-        var formData = new FormData(this);
-        $.ajax({
-          url: '{% url "index" %}',
-          method: 'POST',
-          data: formData,
-          processData: false,
-          contentType: false,
-          success: function(response) {
-            $('#tikzCode').val(response.tikzCode);
-            $('#pdf').attr('src','media/output.pdf');
-          },
-          error: function(xhr) {
-            console.log(xhr.responseText);
-          }
-        });
       });
     });
-  </script>
+  });
+</script>
+<!-- ... -->
 </body>
 </html>

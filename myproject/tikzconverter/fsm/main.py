@@ -12,8 +12,11 @@ def main(fileName, mode, hyperparameters):
     parse = JSONInputParser(data)
     
     store = parse.validateJSON()
-    
-    storeFramework = SugiyamaFramework(store)
+
+    if parse.inputValidate == True:
+        storeFramework = SugiyamaFramework(store)
+    else:
+        raise ValueError("Invalid JSON data")
     
     storeFramework.hyperparameters['repulsionwidth'] = hyperparameters['repulsionwidth']
     storeFramework.hyperparameters['width'] = hyperparameters['width']

@@ -16,7 +16,7 @@ class JSONInputParser:
                                     "properties": {
                                     "id": {
                                         "type": "string",
-                                        "pattern": "^#\\d+$" 
+                                        "pattern": "^(?!#0).+$" 
                                     },
                                     "name": { "type": "string" } 
                                     },
@@ -59,6 +59,7 @@ class JSONInputParser:
             return storeObject
 
         except jsonschema.ValidationError as e:
+            
             self.inputValidate = False
             self.validationError = str(e)
 
@@ -74,9 +75,14 @@ class JSONInputParser:
     def getValid(self):
         return self.inputValidate
 
-    def getJSON(self):
-        return self.inputJSON
- 
+    #postprocessing
+    def checkValidFSM(self, FSMObject):
+        pass
+        #if FSMObject.getInitial() not in FSMObject.getStates.keys():
+        #    return False
+        #return self.inputJSON
+
+         
 
 class validJSON:
     def __init__(self,validInput):
@@ -93,3 +99,5 @@ class validJSON:
     
     def getStates(self):
         return self.validJSON["states"]
+    
+
