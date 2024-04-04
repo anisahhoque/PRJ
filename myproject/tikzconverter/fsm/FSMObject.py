@@ -19,13 +19,19 @@ class FSMData:
 
     def addTransition(self,transition):
         self.transitions.append(transition)
+
     def addSelfTransition(self,transition):
         self.selfTransitions.append(transition)
+
+
     def removeTransition(self,transition):
         self.transitions.remove(transition)
 
-    def removeSelfTransitions(self,transitions):
-        pass
+    def removeSelfTransition(self,transition):
+        self.selfTransitions.remove(transition)
+
+    def addDummyNode(self,dummy):
+        self.dummyNodes[dummy.id] = dummy
     
 
 class FSMNode:
@@ -43,7 +49,6 @@ class FSMNode:
         self.vertexPos = None
 
     def addTransition(self, transition):
-        #seperate the types of transitions
         if transition.fromState == transition.toState:
             if self.hasSelfTransition == False:
                 self.hasSelfTransition = True
@@ -63,20 +68,18 @@ class FSMNode:
     def setYCoord(self,y):
         self.y = y
 
-class FSMDummyNode(FSMNode):
-    def __init__(self, idValue, layerValue):
-        super().__init__(idValue)
-        self.layerValue = layerValue
-
-
-
-
-
 class FSMTransition:
     def __init__(self,label,fromState,toState):
         self.label = label
         self.fromState = fromState
         self.toState = toState
         self.typeDummy = False
+
+class FSMDummyNode(FSMNode):
+    def __init__(self, idValue, layerValue):
+        super().__init__(idValue)
+        self.layerValue = layerValue
+
+
 
 

@@ -2,8 +2,10 @@ from .FSMObject import FSMData, FSMNode, FSMTransition
 class FSMConverter:
     def __init__(self):
         self.machine = FSMData()
+
+
+
     def toFSMObject(self, validJSON):
-        
         nodes = validJSON.getStates()
         edges = validJSON.getTransitions()
         acceptingStates = validJSON.getAcceptingStates() #stores id of acceptances
@@ -45,8 +47,8 @@ class FSMConverter:
 
         [node.setAsAccepting() for node in acceptingNodes]
 
-        #for i in currFSM.states.values():
-            #print(i.transitions)
-            
         return currFSM
+    
+    def checkValidFSM(self, FSMObject):
+        pass
         

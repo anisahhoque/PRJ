@@ -8,16 +8,19 @@ def loadJSON(fileContent):
 
 def main(fileName, mode, hyperparameters):
     data = loadJSON(fileName)
+
     parse = JSONInputParser(data)
+    
     store = parse.validateJSON()
+    
     storeFramework = SugiyamaFramework(store)
     
-    # Update the hyperparameters in the SugiyamaFramework object
     storeFramework.hyperparameters['repulsionwidth'] = hyperparameters['repulsionwidth']
     storeFramework.hyperparameters['width'] = hyperparameters['width']
     storeFramework.hyperparameters['height'] = hyperparameters['height']
     
     while len(storeFramework.detectCycles()) > 0:
+        
         storeFramework.detectCycles()
 
     if mode == 'original':
@@ -25,7 +28,6 @@ def main(fileName, mode, hyperparameters):
     elif mode == 'compact':
         storelayers = storeFramework.layerAssignment()
     else:
-        # Handle invalid mode
         raise ValueError(f"Invalid mode: {mode}")
 
     storeFramework.vertexArrangement(storelayers)

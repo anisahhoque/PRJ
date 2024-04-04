@@ -58,6 +58,11 @@
     $(document).ready(function() {
       $('#tikzForm').on('submit', function(event) {
         event.preventDefault();
+        var fileInput = $('#json_file')[0].files[0];
+        if (!fileInput || fileInput.type !== 'application/json') {
+          alert('Please select a valid JSON file.');
+          return;
+        }
         var formData = new FormData(this);
         $.ajax({
           url: '{% url "index" %}',

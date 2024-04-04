@@ -8,7 +8,7 @@ from django.conf import settings
 
 
 def index(request):
-    hyperparameters = {'repulsionwidth': 2, 'width': 4, 'height': 10}  # Default values
+    hyperparameters = {'repulsionwidth': 2, 'width': 4, 'height': 10} 
     if request.method == 'POST':
         mode = request.POST.get('mode')
         uploaded_file = request.FILES.get('json_file')
@@ -19,8 +19,10 @@ def index(request):
         hyperparameters['width'] = width
         hyperparameters['height'] = height
         if uploaded_file:
-            file_content = uploaded_file.read().decode('utf-8')
-            tikz_code = main(file_content, mode=mode, hyperparameters=hyperparameters)
-            return JsonResponse({'tikzCode': tikz_code})
+            if uploaded_file.name.endswith('.json'):
+                file_content = uploaded_file.read().decode('utf-8')
+                tikz_code = main(file_content, mode=mode, hyperparameters=hyperparameters)
+                return JsonResponse({'tikzCode': tikz_code})
+            else:
+                return JsonResponse({'error': 'Invalid file type. Please upload a JSON file.'}, status=400)
     return render(request, 'index.html', {'hyperparameters': hyperparameters})
-

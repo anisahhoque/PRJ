@@ -7,6 +7,9 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from django.conf import settings
+
+
+
 class SugiyamaFramework:
     def __init__(self,FSMData):
         self.fsm = FSMData
@@ -35,6 +38,7 @@ class SugiyamaFramework:
         path.pop()
 
     def detectCycles(self):
+        print(self.fsm)
         visited = set()
         cycles = []
         
@@ -54,10 +58,10 @@ class SugiyamaFramework:
 
         #update nodes
         fromNode.transitions.remove(transition)
-        #reversedTransition = FSMTransition(label=transition.label, fromState=toState, toState=fromState)
+       
         toNode.transitions.append(transition)
 
-    def layerAssignment4(self):
+    def layerAssignment5(self):
         self.assignLayers()
         
         for i in self.feedbackSet:
@@ -79,10 +83,54 @@ class SugiyamaFramework:
 
             self.assignXCoords(nodeID=node_id,layer=layer_value)
 
-        
         self.assignGridCoords(layers)
         return layers
     
+    def layerAssignment4(self):
+        self.assignLayers()
+        
+        for i in self.feedbackSet:
+            self.edgeReversal(i)
+
+        storeLong = self.identifyLongEdges()
+        
+        self.insertDummyVertices(storeLong) 
+
+        layers = {}
+        for node_id, node in self.fsm.states.items():
+            layer_value = node.layerValue
+            if layer_value not in layers:
+                layers[layer_value] = []
+
+            layers[layer_value].append(node_id)
+            self.assignXCoords(nodeID=node_id,layer=layer_value)
+        barySorted = self.newBary(layers)
+
+        return barySorted
+    
+    def newBary(self, layers):
+        print(layers)
+        barycenters = {}
+        for layer, vertices in layers.items():
+            if layer == 0:
+                continue
+            else:
+                previouslayer = layers[layer-1]
+                for vertex in vertices:
+                    neighbours = self.getNeighboursInPreviousLayer3(vertex, layers)
+                    if neighbours:  # Check if the neighbor list is not empty
+                        neighbourPos = [previouslayer.index(neighbour) for neighbour in neighbours]
+                        barycenter = sum(neighbourPos) / len(neighbours)
+                    barycenters[vertex] = barycenter
+        
+        sorted_layers = {}
+        for layer, vertices in layers.items():
+            sorted_vertices = sorted(vertices, key=lambda vertex: barycenters.get(vertex, 0))
+            sorted_layers[layer] = sorted_vertices
+
+
+        return sorted_layers
+
     def assignGridCoords(self, layers):
 
     
@@ -207,9 +255,10 @@ class SugiyamaFramework:
                 self.fsm.states[vertex].setYCoord(yCoord)
                 yCoord += step
 
-    def vertexArrangement4(self,layers):
+    def vertexArrangement(self,layers):
         
-        
+        self.assignYCoords(layers)
+        return 0
         for i in range(23):
             for layer in list(layers.values()):
                 degrees = {}
@@ -249,11 +298,12 @@ class SugiyamaFramework:
 
         return sorted_nodes
         
-    def vertexArrangement(self,layers):
+    def vertexArrangement2(self,layers):
         
         self.assignYCoords(layers) #assign default values
         
 
+        
         for i in range(23): #special iteration number
             for layer in list(layers.values()):
                 degrees = {}
@@ -336,17 +386,17 @@ class SugiyamaFramework:
 
         for node_id in dummy_nodes:
             if remaining_coords:
-                coord = remaining_coords.pop(0)  # Take the first remaining coordinate
+                coord = remaining_coords.pop(0)  
                 self.fsm.states[node_id].y = coord
         
         #self.dummyArrangement()
         #self.assign_dummy_positions()
 
     def minimum_degree_ordering(self, layer, degrees):
-        # Sort the nodes in the layer based on their degrees in ascending order
+
         sorted_nodes = sorted(layer, key=lambda vertex: degrees[vertex])
 
-        # Update the positions of nodes in the layer based on the minimum degree ordering
+
         for i, vertex in enumerate(sorted_nodes):
             self.fsm.states[vertex].y = i
 
@@ -357,20 +407,19 @@ class SugiyamaFramework:
             source_node = self.fsm.states[long_edge.fromState]
             target_node = self.fsm.states[long_edge.toState]
             print(self.fsm.states["#0"].y)
-            # Calculate the initial y-position for dummy vertices
+
 
             dummy_y = ((source_node.y + target_node.y) / 2) + 1
 
-            # Check for conflicts with other nodes
             while self.check_y_conflict(dummy_y)[0]:
-                # Adjust the y-position until there is no conflict
+
                 if dummy_y > 10/2 :
                     dummy_y += 0.3
                 else:
                     dummy_y -= 0.3
 
-            # Assign positions to dummy vertices
-            for dummy_node in dummy_nodes[1:-1]:  # Exclude source and target nodes
+
+            for dummy_node in dummy_nodes[1:-1]:  
                 dummy_node.y = dummy_y
 
     def check_y_conflict(self, y):
@@ -382,56 +431,28 @@ class SugiyamaFramework:
 
         return [False]
     
-    def compile_tikz1(self,tikz_code, output_file='output.pdf'):
-        
-        if os.path.exists(output_file):
-            os.remove(output_file)
-        
-        # Create a temporary TeX file with the TikZ code
-        with open('temp.tex', 'w') as f:
-            print(type(tikz_code))
-            f.write(tikz_code)
-        
-        try:
-            # Compile the TeX file to PDF
-            subprocess.run(['pdflatex', '-interaction=nonstopmode', 'temp.tex'], check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"Error compiling TikZ code: {e}")
-            return
-        
-        # Check if temp.pdf was successfully generated
-        if os.path.exists('temp.pdf'):
-            # Move the generated PDF file to the desired output name
-            subprocess.run(['mv', 'temp.pdf', output_file], check=True)
-            print(f"TikZ code compiled to {output_file}")
-        else:
-            print("Error: temp.pdf file not generated.")
+
         
     def compile_tikz(self, tikz_code, output_file='output.pdf'):
-        # Path to the media folder
         media_folder = settings.MEDIA_ROOT
-
-        # Remove existing output file in the media folder
         output_file_path = os.path.join(media_folder, output_file)
+
+
         if os.path.exists(output_file_path):
             os.remove(output_file_path)
 
-        # Create a temporary TeX file with the TikZ code in the media folder
+
         temp_tex_path = os.path.join(media_folder, 'temp.tex')
         with open(temp_tex_path, 'w') as f:
             f.write(tikz_code)
         
         try:
-            # Compile the TeX file to PDF in the media folder
             subprocess.run(['pdflatex', '-interaction=nonstopmode', temp_tex_path], check=True, cwd=media_folder)
         except subprocess.CalledProcessError as e:
             print(f"Error compiling TikZ code: {e}")
             return
-        
-        # Check if temp.pdf was successfully generated in the media folder
         temp_pdf_path = os.path.join(media_folder, 'temp.pdf')
         if os.path.exists(temp_pdf_path):
-            # Move the generated PDF file to the desired output name in the media folder
             subprocess.run(['mv', temp_pdf_path, output_file_path], check=True)
             print(f"TikZ code compiled to {output_file}")
         else:
@@ -494,13 +515,12 @@ class SugiyamaFramework:
         
         tikz_code.append(r"\documentclass{standalone}")
         tikz_code.append(r"\usepackage{tikz}")
-        tikz_code.append(r"\usetikzlibrary{automata,positioning}")  # Add automata and positioning libraries
+        tikz_code.append(r"\usetikzlibrary{automata,positioning}")  
         tikz_code.append(r"\begin{document}")
-        #tikz_code.append(r"\begin{tikzpicture}[->,>=stealth,auto,node distance=2.5cm,semithick]")
         tikz_code.append(r"\begin{tikzpicture}[->,>=stealth,auto,node distance=2.5cm,semithick,every state/.style={minimum width=1cm, minimum height=1cm, text width=0.75cm,align=center}]")
 
 
-        # Generate nodes
+  
         for node_id, node in self.fsm.states.items():
             x = node.x
             y = node.y
@@ -529,22 +549,18 @@ class SugiyamaFramework:
             transition_label = long_edge.label[:3]
 
             if abs(source_node.layerValue - target_node.layerValue) == 1:
-                # Edge spans only one layer, use a regular curved arrow
                 if source_node.layerValue < target_node.layerValue:
-                    # Forward edge (left to right)
                     tikz_code.append(f"\\draw[->, rounded corners=15pt] ({source_node.id.lstrip('#')}) to[bend left=30] node[midway, sloped, above] {{{transition_label}}} ({target_node.id.lstrip('#')});")
                 else:
-                    # Backward edge (right to left)
                     tikz_code.append(f"\\draw[->, rounded corners=15pt] ({source_node.id.lstrip('#')}) to[bend right=30] node[midway, sloped, above] {{{transition_label}}} ({target_node.id.lstrip('#')});")
             else:
-                # Edge spans multiple layers, use dummy nodes
-                # Generate the edge path using dummy node positions
+
                 if type(source_node) is FSMDummyNode:
                     edge_path = f"({source_node.x},{source_node.y})"
                 else:
                     edge_path = f"({source_node.id.lstrip('#')})"
 
-                for dummy_node in dummy_nodes[1:-1]:  # Exclude source and target nodes
+                for dummy_node in dummy_nodes[1:-1]: 
                     edge_path += f" -- ({dummy_node.x},{dummy_node.y})"
 
                 if type(target_node) is FSMDummyNode:
@@ -552,10 +568,10 @@ class SugiyamaFramework:
                 else:
                     edge_path += f" -- ({target_node.id.lstrip('#')})"
 
-                # Add the edge path to the TikZ code with curved corners
+                
                 tikz_code.append(f"\\draw[->, rounded corners=0pt] {edge_path} node[midway, sloped, above] {{{transition_label}}};")
 
-        # Generate edges
+      
         for transition in self.fsm.transitions:
             label = transition.label[:3]
             if transition.typeDummy == True:
@@ -590,8 +606,7 @@ class SugiyamaFramework:
 
 
 
-    #doesnt care what kind of node
-
+    #checks for all node types
     def getNeighboursInPreviousLayer3(self,nodeID,layers):
         previousLayer = self.fsm.states[nodeID].layerValue - 1
         potentialNeighbours = layers[previousLayer]
@@ -604,7 +619,7 @@ class SugiyamaFramework:
         neighbours = [n for n in potentialNeighbours if any(x.toState == nodeID for x in self.fsm.states[n].transitions)]
         return neighbours
     
-    #checks for fsm nodes too
+    #checks for fsm nodes only
     def getNeighboursInPreviousLayer(self, nodeID, layers):
         previousLayer = self.fsm.states[nodeID].layerValue - 1
         potentialNeighbours = layers[previousLayer]
@@ -656,16 +671,12 @@ class SugiyamaFramework:
     def identifyLongEdges(self):
         storeLongEdges = []
         nodes = list(self.fsm.states.keys())
-        
         for i in nodes:
-            
             currLayerVal = self.fsm.states[i].layerValue
-            
             for j in self.fsm.states[i].transitions:
                 transLayerVal = self.fsm.states[j.toState].layerValue
                 if abs(transLayerVal - currLayerVal) > 1 :
                     storeLongEdges.append(j)
-
         return (storeLongEdges)
 
 
@@ -738,9 +749,6 @@ class SugiyamaFramework:
                     transitions.append(transition)
                 self.fsm.transitions.extend(transitions)               
 
-
-            
-                
 
 
     def findPredeccessors(self,nodeID):
