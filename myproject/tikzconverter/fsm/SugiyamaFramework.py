@@ -7,7 +7,8 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from django.conf import settings
-
+import numpy as np
+from scipy.optimize import linprog
 
 
 class SugiyamaFramework:
@@ -255,7 +256,59 @@ class SugiyamaFramework:
                 self.fsm.states[vertex].setYCoord(yCoord)
                 yCoord += step
 
-    def vertexArrangement(self,layers):
+
+
+    def vertexArrangement(self, sorted_layers):
+        vertex_sep = 1
+        vertex_sizes = {v: 0.5 for v in self.fsm.states.keys()}
+        dummy_vertices = self.fsm.dummyNodes.keys()
+        edges = [(i.fromState, i.toState) for i in self.fsm.transitions]
+
+    def vertexArrangement(self, sorted_layers):
+        vertex_sep = 3
+
+        # Assign priorities to vertices based on their connectivity and dummy status
+        priorities = {}
+        for layer, nodes in sorted_layers.items():
+            for node in nodes:
+                priority = 0
+                if node in self.fsm.dummyNodes:
+                    priority += 1000  # Give highest priority to dummy vertices
+                for transition in self.fsm.transitions:
+                    if transition.fromState == node:
+                        if layer > 0 and transition.toState in sorted_layers[layer - 1]:
+                            priority += 1  # Increase priority based on connections to the previous layer
+                priorities[node] = priority
+
+        # Assign y-coordinates to vertices based on their priorities
+        for layer, nodes in sorted_layers.items():
+            # Sort nodes based on their priorities (higher priority first)
+            sorted_nodes = sorted(nodes, key=lambda x: priorities[x], reverse=True)
+
+            # Assign y-coordinates to nodes
+            y_coord = 0
+            for node in sorted_nodes:
+                self.fsm.states[node].y = y_coord
+                y_coord += vertex_sep
+
+            # Adjust y-coordinates of lower priority nodes if needed
+            for i in range(len(sorted_nodes)):
+                node = sorted_nodes[i]
+                if node not in self.fsm.dummyNodes:
+                    continue
+                dummy_y = self.fsm.states[node].y
+                for transition in self.fsm.transitions:
+                    if transition.fromState == node:
+                        neighbor = transition.toState
+                        if layer < len(sorted_layers) - 1 and neighbor in sorted_layers[layer + 1]:
+                            neighbor_y = self.fsm.states[neighbor].y
+                            if abs(dummy_y - neighbor_y) > vertex_sep:
+                                # Adjust y-coordinate of the lower priority neighbor
+                                self.fsm.states[neighbor].y = dummy_y
+
+  
+        
+    def vertexArrangement10(self,layers):
         
         self.assignYCoords(layers)
         return 0
@@ -569,7 +622,7 @@ class SugiyamaFramework:
                     edge_path += f" -- ({target_node.id.lstrip('#')})"
 
                 
-                tikz_code.append(f"\\draw[->, rounded corners=0pt] {edge_path} node[midway, sloped, above] {{{transition_label}}};")
+                tikz_code.append(f"\\draw[->, rounded corners=5pt] {edge_path} node[midway, sloped, above] {{{transition_label}}};")
 
       
         for transition in self.fsm.transitions:

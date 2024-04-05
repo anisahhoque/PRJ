@@ -39,6 +39,15 @@ class FSMData:
     def getStates(self):
         return self.states
     
+    def getAcceptingStates(self):
+        return self.acceptingStates
+    
+    def getTransitions(self):
+        return self.transitions
+    
+    def getSelfTransitions(self):
+        return self.selfTransitions
+    
 
 class FSMNode:
     def __init__(self,idValue):

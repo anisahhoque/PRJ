@@ -19,12 +19,13 @@ def index(request):
         hyperparameters['width'] = width
         hyperparameters['height'] = height
         if uploaded_file:
-
+            if uploaded_file.name.endswith('.json'):
                 file_content = uploaded_file.read().decode('utf-8')
                 try:
                     tikz_code = main(file_content, mode=mode, hyperparameters=hyperparameters)
                     return JsonResponse({'tikzCode': tikz_code})
                 except ValueError as e:
                     return JsonResponse({'error': str(e)}, status=400)
-
+            else:
+                return JsonResponse({'error': 'Invalid file type. Please upload a JSON file.'}, status=400)
     return render(request, 'index.html', {'hyperparameters': hyperparameters})

@@ -14,7 +14,14 @@ def main(fileName, mode, hyperparameters):
     store = parse.validateJSON()
 
     if parse.inputValidate == True:
-        storeFramework = SugiyamaFramework(store)
+        
+        print(parse.checkValidFSM(store))
+        if parse.checkValidFSM(store):
+            
+            storeFramework = SugiyamaFramework(store)
+        else:
+            raise ValueError("Graph is not a valid FSM")
+            
     else:
         raise ValueError("Invalid JSON data")
     
