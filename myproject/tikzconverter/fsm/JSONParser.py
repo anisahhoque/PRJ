@@ -16,7 +16,7 @@ class JSONInputParser:
                                     "properties": {
                                     "id": {
                                         "type": "string",
-                                        "pattern": "^(?!#0).+$" 
+                                        "pattern": "^(?!#0).+$","maxLength": 5
                                     },
                                     "name": { "type": "string" } 
                                     },
@@ -30,7 +30,7 @@ class JSONInputParser:
                                     "properties": {
                                     "from": { "type": "string" },
                                     "to": { "type": "string" },
-                                    "label": { "type": "string" },
+                                    "label": { "type": "string" ,"maxLength": 5},
                                     },
                                     "required": ["from", "to", "label"]
                                 }

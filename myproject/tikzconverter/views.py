@@ -8,7 +8,7 @@ from django.conf import settings
 
 
 def index(request):
-    hyperparameters = {'repulsionwidth': 2, 'width': 4, 'height': 10} 
+    hyperparameters = {'repulsionwidth': 2, 'width': 4, 'height': 5} 
     if request.method == 'POST':
         mode = request.POST.get('mode')
         uploaded_file = request.FILES.get('json_file')
@@ -22,7 +22,7 @@ def index(request):
             if uploaded_file.name.endswith('.json'):
                 file_content = uploaded_file.read().decode('utf-8')
                 try:
-                    tikz_code = main(file_content, mode=mode, hyperparameters=hyperparameters)
+                    tikz_code = main(file_content, hyperparameters=hyperparameters)
                     return JsonResponse({'tikzCode': tikz_code})
                 except ValueError as e:
                     return JsonResponse({'error': str(e)}, status=400)

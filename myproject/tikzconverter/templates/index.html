@@ -22,12 +22,6 @@
   <p>tikz</p>
   <form id="tikzForm">
     {% csrf_token %}
-    <label for="mode">Select Mode:</label>
-    <select name="mode" id="mode">
-      <option value="original" selected>Original</option>
-      <option value="compact">Compact</option>
-    </select>
-    <br><br>
     <label for="repulsionwidth">Repulsion Width:</label>
     <input type="number" name="repulsionwidth" id="repulsionwidth" value="{{ hyperparameters.repulsionwidth }}">
     <br><br>

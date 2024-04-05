@@ -6,7 +6,7 @@ def loadJSON(fileContent):
     return json.loads(fileContent)
 
 
-def main(fileName, mode, hyperparameters):
+def main(fileName, hyperparameters):
     data = loadJSON(fileName)
 
     parse = JSONInputParser(data)
@@ -33,12 +33,9 @@ def main(fileName, mode, hyperparameters):
         
         storeFramework.detectCycles()
 
-    if mode == 'original':
-        storelayers = storeFramework.layerAssignment4()
-    elif mode == 'compact':
-        storelayers = storeFramework.layerAssignment()
-    else:
-        raise ValueError(f"Invalid mode: {mode}")
+   
+    storelayers = storeFramework.layerAssignment4()
+
 
     storeFramework.vertexArrangement(storelayers)
     tikzCode = storeFramework.generate_tikz_code()
