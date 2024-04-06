@@ -29,6 +29,7 @@ def main(fileName, hyperparameters):
     storeFramework.hyperparameters['width'] = hyperparameters['width']
     storeFramework.hyperparameters['height'] = hyperparameters['height']
     storeFramework.hyperparameters['orientation'] = hyperparameters['orientation']
+   
     while len(storeFramework.detectCycles()) > 0:
         
         storeFramework.detectCycles()
@@ -38,6 +39,7 @@ def main(fileName, hyperparameters):
 
 
     storeFramework.vertexArrangement(storelayers)
+ 
     tikzCode = storeFramework.generateTikzCode()
     storeFramework.compileTikz(tikzCode)
     return tikzCode

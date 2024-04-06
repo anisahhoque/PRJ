@@ -16,12 +16,13 @@ def index(request):
         width = int(request.POST.get('width', hyperparameters['width']))
         height = int(request.POST.get('height', hyperparameters['height']))
         orientation = str(request.POST.get('orientation', hyperparameters['orientation']))
-        print("in views")
-        print(orientation)
+       
+
         hyperparameters['orientation'] = orientation
         hyperparameters['width'] = width
         hyperparameters['height'] = height
         hyperparameters['bend'] = bend
+     
         if uploaded_file:
             if uploaded_file.name.endswith('.json'):
                 file_content = uploaded_file.read().decode('utf-8')

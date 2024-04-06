@@ -220,7 +220,8 @@ class SugiyamaFramework:
 
 
     def generateTikzCode(self):
-   
+        
+        
         bend = self.hyperparameters['bend']
         tikzCode = []
         
@@ -445,7 +446,6 @@ class SugiyamaFramework:
                 predeccessors.append(i.fromState)
         return(predeccessors)
                 
-
 
 
 
