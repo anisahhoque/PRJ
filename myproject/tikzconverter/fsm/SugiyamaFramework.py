@@ -9,7 +9,7 @@ class SugiyamaFramework:
     def __init__(self,FSMData):
         self.fsm = FSMData
         self.feedbackSet = []
-        self.hyperparameters = {'bend': 15,'width':4,'height':5}
+        self.hyperparameters = {'bend': 15,'width':4,'height':5, 'orientation': 'horizontal'}
         self.tikzCode = None
 
 
@@ -54,7 +54,7 @@ class SugiyamaFramework:
         toNode.transitions.append(transition)
 
 
-    def layerAssignment4(self):
+    def layerAssignment(self):
         self.assignLayers()
     
         for i in self.feedbackSet:
@@ -83,7 +83,7 @@ class SugiyamaFramework:
             else:
                 previouslayer = layers[layer-1]
                 for vertex in vertices:
-                    neighbours = self.getNeighboursInPreviousLayer3(vertex, layers)
+                    neighbours = self.getNeighboursInPreviousLayer(vertex, layers)
                     if neighbours:  # Check if the neighbor list is not empty
                         neighbourPos = [previouslayer.index(neighbour) for neighbour in neighbours]
                         barycenter = sum(neighbourPos) / len(neighbours)
@@ -122,48 +122,41 @@ class SugiyamaFramework:
 
 
     def assignXCoords(self,nodeID,layer):
-        self.fsm.states[nodeID].setXCoord(layer*self.hyperparameters['width'])
-        
-    def assignYCoords(self,layers):
-        for layers in layers.values():
-
-            verticeCount = len(layers)
-            step = self.hyperparameters['height'] / (verticeCount + 1)
-            yCoord = round(step,1)
-
-            for vertex in layers:
-                self.fsm.states[vertex].setYCoord(yCoord)
-                yCoord += step
-
+        if self.hyperparameters['orientation'] == 'vertical':
+            self.fsm.states[nodeID].setXCoord(layer*self.hyperparameters['height'])
+        else:
+            self.fsm.states[nodeID].setXCoord(layer*self.hyperparameters['width'])
 
     def vertexArrangement(self, sortedLayers):
-        vertexSeperation = self.hyperparameters['height']
+        if self.hyperparameters['orientation'] == 'vertical':
+            vertexSeperation = self.hyperparameters['width']
+        else:
+            vertexSeperation = self.hyperparameters['height']
 
-        # Assign priorities to vertices based on their connectivity and dummy status
         priorities = {}
         for layer, nodes in sortedLayers.items():
             for node in nodes:
                 priority = 0
                 if node in self.fsm.dummyNodes:
-                    priority += 1000  # Give highest priority to dummy vertices
+                    priority += 1000  
                 for transition in self.fsm.transitions:
                     if transition.fromState == node:
                         if layer > 0 and transition.toState in sortedLayers[layer - 1]:
-                            priority += 1  # Increase priority based on connections to the previous layer
+                            priority += 1  
                 priorities[node] = priority
 
-        # Assign y-coordinates to vertices based on their priorities
+ 
         for layer, nodes in sortedLayers.items():
-            # Sort nodes based on their priorities (higher priority first)
+
             sortedNodes = sorted(nodes, key=lambda x: priorities[x], reverse=True)
 
-            # Assign y-coordinates to nodes
+  
             yCoord = 0
             for node in sortedNodes:
                 self.fsm.states[node].y = yCoord
                 yCoord += vertexSeperation
 
-            # Adjust y-coordinates of lower priority nodes if needed
+
             for i in range(len(sortedNodes)):
                 node = sortedNodes[i]
                 if node not in self.fsm.dummyNodes:
@@ -175,19 +168,14 @@ class SugiyamaFramework:
                         if layer < len(sortedLayers) - 1 and neighbor in sortedLayers[layer + 1]:
                             neighbourY = self.fsm.states[neighbor].y
                             if abs(dummyY - neighbourY) > vertexSeperation:
-                                # Adjust y-coordinate of the lower priority neighbor
+                            
                                 self.fsm.states[neighbor].y = dummyY
 
-        # Find the initial node
-        initialNode = self.fsm.initialState
 
-        # Calculate the offset based on the initial node's y-coordinate
-        offset = self.fsm.states[initialNode.id].y
-
-        # Adjust the y-coordinates of all vertices by subtracting the offset
-        for state in self.fsm.states.values():
-            state.y -= offset
-
+        if self.hyperparameters['orientation'] == 'vertical':
+            
+            for state in self.fsm.states.values():
+                state.x, state.y = state.y, state.x*-1
   
         
 
@@ -232,7 +220,7 @@ class SugiyamaFramework:
 
 
     def generateTikzCode(self):
-        new = Latex
+   
         bend = self.hyperparameters['bend']
         tikzCode = []
         
@@ -311,7 +299,7 @@ class SugiyamaFramework:
             fromNode = transition.fromState.lstrip('#')
             toNode = transition.toState.lstrip('#')
             label = transition.label[:3]
-            if fromNode == toNode:  # Self-transition
+            if fromNode == toNode:  
                 tikzCode.append(f"\\draw[->, loop above] ({fromNode}) to node[sloped, above] {{{label}}} ({toNode});")
             else:
                 tikzCode.append(f"\\draw[->] ({fromNode}) -- node[midway, sloped, above] {{{label}}} ({toNode});")
@@ -326,8 +314,7 @@ class SugiyamaFramework:
 
 
 
-    #checks for all node types
-    def getNeighboursInPreviousLayer3(self,nodeID,layers):
+    def getNeighboursInPreviousLayer(self,nodeID,layers):
         previousLayer = self.fsm.states[nodeID].layerValue - 1
         potentialNeighbours = layers[previousLayer]
         neighbours = [n for n in potentialNeighbours if any(x.toState == nodeID for x in self.fsm.states[n].transitions)]

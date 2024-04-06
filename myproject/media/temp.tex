@@ -4,13 +4,13 @@
 \begin{document}
 \begin{tikzpicture}[->,>=stealth,auto,node distance=2.5cm,semithick,every state/.style={minimum width=1cm, minimum height=1cm, text width=0.75cm,align=center}]
 \node[state, initial] (12) at (0,0) {12};
-\node[state] (1) at (4,3) {1};
-\node[state, accepting] (2) at (4,6) {2};
-\node[state] (3) at (8,3) {3};
-\node[state, accepting] (4) at (12,0) {4};
-\node[state] (5) at (8,6) {5};
-\node[state, accepting] (6) at (12,3) {6};
-\draw[->, rounded corners=15pt] (6) -- (8,0) -- (4,0) -- (12) node[midway, sloped, above] {Tra};
+\node[state] (1) at (3,-10) {1};
+\node[state, accepting] (2) at (6,-10) {2};
+\node[state] (3) at (3,-20) {3};
+\node[state, accepting] (4) at (0,-30) {4};
+\node[state] (5) at (6,-20) {5};
+\node[state, accepting] (6) at (3,-30) {6};
+\draw[->, rounded corners=15pt] (6) -- (0,-20) -- (0,-10) -- (12) node[midway, sloped, above] {Tra};
 \path (12) edge node[midway, sloped, above] {Tr} (1);
 \path (12) edge node[midway, sloped, above] {Tr} (2);
 \path (1) edge node[midway, sloped, above] {Tr} (3);

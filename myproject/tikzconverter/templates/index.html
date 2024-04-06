@@ -76,6 +76,13 @@
         <label for="height" class="form-label">Height:</label>
         <input type="number" name="height" id="height" class="form-control" value="{{ hyperparameters.height }}">
       </div>
+      <div>
+      <label for="orientation" class="form-label">Graph Orientation:</label>
+      <select name="orientation" id="orientation" class="form-control" value="{{ hyperparameters.orientation}}">
+        <option value="horizontal">Horizontal</option>
+        <option value="vertical">Vertical</option>
+      </select>
+      </div>
       <div class="mb-3">
         <label for="json_file" class="form-label">Select JSON File:</label>
         <input type="file" name="json_file" id="json_file" class="form-control" accept=".json">
@@ -84,6 +91,7 @@
       <input type="file" name="json_file" id="json_file" class="form-control d-none" accept=".json">
       <button type="submit" class="btn btn-primary">Generate TikZ Code</button>
 
+      
 
     </form>
     <hr class="my-5">

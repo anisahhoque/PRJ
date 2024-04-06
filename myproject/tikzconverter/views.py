@@ -8,16 +8,20 @@ from django.conf import settings
 
 
 def index(request):
-    hyperparameters = {'bend':15, 'width': 4, 'height': 5} 
+    hyperparameters = {'bend':15, 'width': 4, 'height': 5, 'orientation' : 'horizontal'} 
     if request.method == 'POST':
-        mode = request.POST.get('mode')
+        
         uploaded_file = request.FILES.get('json_file')
-        bend= int(request.POST.get('width', hyperparameters['bend']))
+        bend= int(request.POST.get('bend', hyperparameters['bend']))
         width = int(request.POST.get('width', hyperparameters['width']))
         height = int(request.POST.get('height', hyperparameters['height']))
-        
+        orientation = str(request.POST.get('orientation', hyperparameters['orientation']))
+        print("in views")
+        print(orientation)
+        hyperparameters['orientation'] = orientation
         hyperparameters['width'] = width
         hyperparameters['height'] = height
+        hyperparameters['bend'] = bend
         if uploaded_file:
             if uploaded_file.name.endswith('.json'):
                 file_content = uploaded_file.read().decode('utf-8')

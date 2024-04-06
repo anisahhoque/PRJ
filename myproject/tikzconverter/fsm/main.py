@@ -28,13 +28,13 @@ def main(fileName, hyperparameters):
     storeFramework.hyperparameters['bend'] = hyperparameters['bend']
     storeFramework.hyperparameters['width'] = hyperparameters['width']
     storeFramework.hyperparameters['height'] = hyperparameters['height']
-    
+    storeFramework.hyperparameters['orientation'] = hyperparameters['orientation']
     while len(storeFramework.detectCycles()) > 0:
         
         storeFramework.detectCycles()
 
    
-    storelayers = storeFramework.layerAssignment4()
+    storelayers = storeFramework.layerAssignment()
 
 
     storeFramework.vertexArrangement(storelayers)
