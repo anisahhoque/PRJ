@@ -1,22 +1,16 @@
-from .FSMObject import FSMTransition,FSMDummyNode,FSMNode
+from .FSMObject import FSMTransition,FSMDummyNode
 import os
-import copy
-import math
 import subprocess
-import random
-import numpy as np
-import matplotlib.pyplot as plt
 from django.conf import settings
-import numpy as np
-from scipy.optimize import linprog
+
 
 
 class SugiyamaFramework:
     def __init__(self,FSMData):
         self.fsm = FSMData
         self.feedbackSet = []
-        self.y_step = 0
-        self.hyperparameters = {'repulsionwidth':2, 'width':4,'height':5}
+        self.hyperparameters = {'bend': 15,'width':4,'height':5}
+        self.tikzCode = None
 
 
     def dfs(self, node, visited, path, cycles):
@@ -24,27 +18,25 @@ class SugiyamaFramework:
         path.append(node.id)
 
         for transition in node.transitions:
-            neighbor_id = transition.toState
-            if neighbor_id in path:
-                cycle_start_index = path.index(neighbor_id)
-                cycle = path[cycle_start_index:]
+            neighbourID = transition.toState
+            if neighbourID in path:
+                cycleStart = path.index(neighbourID)
+                cycle = path[cycleStart:]
                 cycles.append(cycle)
                 self.feedbackSet.append(transition)
                 self.edgeReversal(transition)
                 
-            elif neighbor_id not in visited:
-                neighbor_node = self.fsm.states[neighbor_id]
-                self.dfs(neighbor_node, visited, path, cycles)
+            elif neighbourID not in visited:
+                neighbourNode = self.fsm.states[neighbourID]
+                self.dfs(neighbourNode, visited, path, cycles)
 
         path.pop()
 
     def detectCycles(self):
-        print(self.fsm)
         visited = set()
         cycles = []
-        
-        for state_id, state in self.fsm.states.items():
-            if state_id not in visited:
+        for stateID, state in self.fsm.states.items():
+            if stateID not in visited:
                 self.dfs(state, visited, [], cycles)
         return cycles
     
@@ -59,34 +51,31 @@ class SugiyamaFramework:
 
         #update nodes
         fromNode.transitions.remove(transition)
-       
         toNode.transitions.append(transition)
 
 
     def layerAssignment4(self):
         self.assignLayers()
-        
+    
         for i in self.feedbackSet:
             self.edgeReversal(i)
 
         storeLong = self.identifyLongEdges()
-        
         self.insertDummyVertices(storeLong) 
 
         layers = {}
-        for node_id, node in self.fsm.states.items():
-            layer_value = node.layerValue
-            if layer_value not in layers:
-                layers[layer_value] = []
+        for nodeID, node in self.fsm.states.items():
+            layerValue = node.layerValue
+            if layerValue not in layers:
+                layers[layerValue] = []
 
-            layers[layer_value].append(node_id)
-            self.assignXCoords(nodeID=node_id,layer=layer_value)
+            layers[layerValue].append(nodeID)
+            self.assignXCoords(nodeID=nodeID,layer=layerValue)
         barySorted = self.bary(layers)
 
         return barySorted
     
     def bary(self, layers):
-        print(layers)
         barycenters = {}
         for layer, vertices in layers.items():
             if layer == 0:
@@ -100,13 +89,13 @@ class SugiyamaFramework:
                         barycenter = sum(neighbourPos) / len(neighbours)
                     barycenters[vertex] = barycenter
         
-        sorted_layers = {}
+        sortedLayers = {}
         for layer, vertices in layers.items():
-            sorted_vertices = sorted(vertices, key=lambda vertex: barycenters.get(vertex, 0))
-            sorted_layers[layer] = sorted_vertices
+            sortedVertices = sorted(vertices, key=lambda vertex: barycenters.get(vertex, 0))
+            sortedLayers[layer] = sortedVertices
 
 
-        return sorted_layers
+        return sortedLayers
 
 
  
@@ -119,16 +108,16 @@ class SugiyamaFramework:
         self.insertDummyVertices(storeLong) 
 
         layers = {}
-        for node_id, node in self.fsm.dummyNodes.items():
+        for nodeID, node in self.fsm.dummyNodes.items():
 
-            layer_value = node.layerValue
-            if layer_value not in layers:
-                layers[layer_value] = []
+            layerValue = node.layerValue
+            if layerValue not in layers:
+                layers[layerValue] = []
 
             
-            layers[layer_value].append(node_id)
+            layers[layerValue].append(nodeID)
 
-            self.assignXCoords(nodeID=node_id,layer=layer_value)
+            self.assignXCoords(nodeID=nodeID,layer=layerValue)
             
 
 
@@ -147,60 +136,53 @@ class SugiyamaFramework:
                 yCoord += step
 
 
-
-    def vertexArrangement(self, sorted_layers):
-        vertex_sep = 1
-        vertex_sizes = {v: 0.5 for v in self.fsm.states.keys()}
-        dummy_vertices = self.fsm.dummyNodes.keys()
-        edges = [(i.fromState, i.toState) for i in self.fsm.transitions]
-
-    def vertexArrangement(self, sorted_layers):
-        vertex_sep = self.hyperparameters['height']
+    def vertexArrangement(self, sortedLayers):
+        vertexSeperation = self.hyperparameters['height']
 
         # Assign priorities to vertices based on their connectivity and dummy status
         priorities = {}
-        for layer, nodes in sorted_layers.items():
+        for layer, nodes in sortedLayers.items():
             for node in nodes:
                 priority = 0
                 if node in self.fsm.dummyNodes:
                     priority += 1000  # Give highest priority to dummy vertices
                 for transition in self.fsm.transitions:
                     if transition.fromState == node:
-                        if layer > 0 and transition.toState in sorted_layers[layer - 1]:
+                        if layer > 0 and transition.toState in sortedLayers[layer - 1]:
                             priority += 1  # Increase priority based on connections to the previous layer
                 priorities[node] = priority
 
         # Assign y-coordinates to vertices based on their priorities
-        for layer, nodes in sorted_layers.items():
+        for layer, nodes in sortedLayers.items():
             # Sort nodes based on their priorities (higher priority first)
-            sorted_nodes = sorted(nodes, key=lambda x: priorities[x], reverse=True)
+            sortedNodes = sorted(nodes, key=lambda x: priorities[x], reverse=True)
 
             # Assign y-coordinates to nodes
-            y_coord = 0
-            for node in sorted_nodes:
-                self.fsm.states[node].y = y_coord
-                y_coord += vertex_sep
+            yCoord = 0
+            for node in sortedNodes:
+                self.fsm.states[node].y = yCoord
+                yCoord += vertexSeperation
 
             # Adjust y-coordinates of lower priority nodes if needed
-            for i in range(len(sorted_nodes)):
-                node = sorted_nodes[i]
+            for i in range(len(sortedNodes)):
+                node = sortedNodes[i]
                 if node not in self.fsm.dummyNodes:
                     continue
-                dummy_y = self.fsm.states[node].y
+                dummyY = self.fsm.states[node].y
                 for transition in self.fsm.transitions:
                     if transition.fromState == node:
                         neighbor = transition.toState
-                        if layer < len(sorted_layers) - 1 and neighbor in sorted_layers[layer + 1]:
-                            neighbor_y = self.fsm.states[neighbor].y
-                            if abs(dummy_y - neighbor_y) > vertex_sep:
+                        if layer < len(sortedLayers) - 1 and neighbor in sortedLayers[layer + 1]:
+                            neighbourY = self.fsm.states[neighbor].y
+                            if abs(dummyY - neighbourY) > vertexSeperation:
                                 # Adjust y-coordinate of the lower priority neighbor
-                                self.fsm.states[neighbor].y = dummy_y
+                                self.fsm.states[neighbor].y = dummyY
 
         # Find the initial node
-        initial_node = self.fsm.initialState
+        initialNode = self.fsm.initialState
 
         # Calculate the offset based on the initial node's y-coordinate
-        offset = self.fsm.states[initial_node.id].y
+        offset = self.fsm.states[initialNode.id].y
 
         # Adjust the y-coordinates of all vertices by subtracting the offset
         for state in self.fsm.states.values():
@@ -215,28 +197,28 @@ class SugiyamaFramework:
 
 
         
-    def compile_tikz(self, tikz_code, output_file='output.pdf'):
-        media_folder = settings.MEDIA_ROOT
-        output_file_path = os.path.join(media_folder, output_file)
+    def compileTikz(self, tikzCode, outputFileName='output.pdf'):
+        mediaFolder = settings.MEDIA_ROOT
+        outputFilePath = os.path.join(mediaFolder, outputFileName)
 
 
-        if os.path.exists(output_file_path):
-            os.remove(output_file_path)
+        if os.path.exists(outputFilePath):
+            os.remove(outputFilePath)
 
 
-        temp_tex_path = os.path.join(media_folder, 'temp.tex')
-        with open(temp_tex_path, 'w') as f:
-            f.write(tikz_code)
+        tempTexPath = os.path.join(mediaFolder, 'temp.tex')
+        with open(tempTexPath, 'w') as f:
+            f.write(tikzCode)
         
         try:
-            subprocess.run(['pdflatex', '-interaction=nonstopmode', temp_tex_path], check=True, cwd=media_folder)
+            subprocess.run(['pdflatex', '-interaction=nonstopmode', tempTexPath], check=True, cwd=mediaFolder)
         except subprocess.CalledProcessError as e:
             print(f"Error compiling TikZ code: {e}")
             return
-        temp_pdf_path = os.path.join(media_folder, 'temp.pdf')
-        if os.path.exists(temp_pdf_path):
-            subprocess.run(['mv', temp_pdf_path, output_file_path], check=True)
-            print(f"TikZ code compiled to {output_file}")
+        tempPDFPath = os.path.join(mediaFolder, 'temp.pdf')
+        if os.path.exists(tempPDFPath):
+            subprocess.run(['mv', tempPDFPath, outputFilePath], check=True)
+            print(f"TikZ code compiled to {outputFileName}")
         else:
             print("Error: temp.pdf file not generated.")
 
@@ -249,66 +231,66 @@ class SugiyamaFramework:
 
 
 
-    def generate_tikz_code(self):
-        tikz_code = []
-        nodeLabels = [x.strip('#') for x in self.fsm.states.keys()]
+    def generateTikzCode(self):
+        new = Latex
+        bend = self.hyperparameters['bend']
+        tikzCode = []
         
         
-        tikz_code.append(r"\documentclass{standalone}")
-        tikz_code.append(r"\usepackage{tikz}")
-        tikz_code.append(r"\usetikzlibrary{automata,positioning}")  
-        tikz_code.append(r"\begin{document}")
-        tikz_code.append(r"\begin{tikzpicture}[->,>=stealth,auto,node distance=2.5cm,semithick,every state/.style={minimum width=1cm, minimum height=1cm, text width=0.75cm,align=center}]")
+        
+        tikzCode.append(r"\documentclass{standalone}")
+        tikzCode.append(r"\usepackage{tikz}")
+        tikzCode.append(r"\usetikzlibrary{automata,positioning}")  
+        tikzCode.append(r"\begin{document}")
+        tikzCode.append(r"\begin{tikzpicture}[->,>=stealth,auto,node distance=2.5cm,semithick,every state/.style={minimum width=1cm, minimum height=1cm, text width=0.75cm,align=center}]")
 
 
   
-        for node_id, node in self.fsm.states.items():
+        for nodeID, node in self.fsm.states.items():
             x = node.x
             y = node.y
-            if type(self.fsm.states[node_id]) is FSMDummyNode:
+            if type(self.fsm.states[nodeID]) is FSMDummyNode:
                 continue
             
-
-            if node_id == self.fsm.initialState.id and node in self.fsm.acceptingStates:
-                node_id = node_id.lstrip('#')
-                tikz_code.append(f"\\node[state, initial, accepting] ({node_id}) at ({x},{y}) {{{node_id}}};")
-            elif node_id == self.fsm.initialState.id:
-                node_id = node_id.lstrip('#')
-                tikz_code.append(f"\\node[state, initial] ({node_id}) at ({x},{y}) {{{node_id}}};")
+            nodeLabel = nodeID.lstrip('#')
+            if nodeID == self.fsm.initialState.id and node in self.fsm.acceptingStates:
+                tikzCode.append(f"\\node[state, initial, accepting] ({nodeLabel}) at ({x},{y}) {{{nodeLabel}}};")
+            elif nodeID == self.fsm.initialState.id:
+                tikzCode.append(f"\\node[state, initial] ({nodeLabel}) at ({x},{y}) {{{nodeLabel}}};")
             elif node in self.fsm.acceptingStates:
-                node_id = node_id.lstrip('#')
-                tikz_code.append(f"\\node[state, accepting] ({node_id}) at ({x},{y}) {{{node_id}}};")
+                tikzCode.append(f"\\node[state, accepting] ({nodeLabel}) at ({x},{y}) {{{nodeLabel}}};")
             else:
-                node_id = node_id.lstrip('#')
-                tikz_code.append(f"\\node[state] ({node_id}) at ({x},{y}) {{{node_id}}};")
+                
+                tikzCode.append(f"\\node[state] ({nodeLabel}) at ({x},{y}) {{{nodeLabel}}};")
 
-        for long_edge, dummy_nodes in self.fsm.longEdgeMap.items():
-            source_node = self.fsm.states[long_edge.fromState]
-            target_node = self.fsm.states[long_edge.toState]
-            transition_label = long_edge.label[:3]
-
-            if abs(source_node.layerValue - target_node.layerValue) == 1:
-                if source_node.layerValue < target_node.layerValue:
-                    tikz_code.append(f"\\draw[->, rounded corners=15pt] ({source_node.id.lstrip('#')}) to[bend left=30] node[midway, sloped, above] {{{transition_label}}} ({target_node.id.lstrip('#')});")
+        for longEdge, dummyNodes in self.fsm.longEdgeMap.items():
+            sourceNode = self.fsm.states[longEdge.fromState]
+            endNode = self.fsm.states[longEdge.toState]
+            transitionLabel = longEdge.label
+            sourceLabel = sourceNode.id.lstrip('#')
+            endLabel = endNode.id.lstrip('#')
+            if abs(sourceNode.layerValue - endNode.layerValue) == 1:
+                if sourceNode.layerValue < endNode.layerValue:
+                    tikzCode.append(f"\\draw[->, rounded corners={bend}pt] ({sourceLabel}) to[bend left=30] node[midway, sloped, above] {{{transitionLabel}}} ({endLabel});")
                 else:
-                    tikz_code.append(f"\\draw[->, rounded corners=15pt] ({source_node.id.lstrip('#')}) to[bend right=30] node[midway, sloped, above] {{{transition_label}}} ({target_node.id.lstrip('#')});")
+                    tikzCode.append(f"\\draw[->, rounded corners={bend}pt] ({sourceLabel}) to[bend right=30] node[midway, sloped, above] {{{transitionLabel}}} ({endLabel});")
             else:
 
-                if type(source_node) is FSMDummyNode:
-                    edge_path = f"({source_node.x},{source_node.y})"
+                if type(sourceNode) is FSMDummyNode:
+                    edgePath = f"({sourceNode.x},{sourceNode.y})"
                 else:
-                    edge_path = f"({source_node.id.lstrip('#')})"
+                    edgePath = f"({sourceLabel})"
 
-                for dummy_node in dummy_nodes[1:-1]: 
-                    edge_path += f" -- ({dummy_node.x},{dummy_node.y})"
+                for dummyNode in dummyNodes[1:-1]: 
+                    edgePath += f" -- ({dummyNode.x},{dummyNode.y})"
 
-                if type(target_node) is FSMDummyNode:
-                    edge_path += f" -- ({target_node.x},{target_node.y})"
+                if type(endNode) is FSMDummyNode:
+                    edgePath += f" -- ({endNode.x},{endNode.y})"
                 else:
-                    edge_path += f" -- ({target_node.id.lstrip('#')})"
+                    edgePath += f" -- ({endLabel})"
 
                 
-                tikz_code.append(f"\\draw[->, rounded corners=5pt] {edge_path} node[midway, sloped, above] {{{transition_label}}};")
+                tikzCode.append(f"\\draw[->, rounded corners={bend}pt] {edgePath} node[midway, sloped, above] {{{transitionLabel}}};")
 
       
         for transition in self.fsm.transitions:
@@ -316,29 +298,28 @@ class SugiyamaFramework:
             if transition.typeDummy == True:
                 continue
             elif transition.typeDummy == False:
-                from_node = transition.fromState
-                to_node = transition.toState 
-                fromNode = self.fsm.states[from_node]
-                toNode = self.fsm.states[to_node]
+                fromNode = transition.fromState
+                toNode = transition.toState 
+
 
                 fromN = transition.fromState.lstrip('#')
                 toN= transition.toState.lstrip('#')
 
-                tikz_code.append(f"\\path ({fromN}) edge node[midway, sloped, above] {{{label}}} ({toN});")
+                tikzCode.append(f"\\path ({fromN}) edge node[midway, sloped, above] {{{label}}} ({toN});")
         
         for transition in self.fsm.selfTransitions:
-            from_node = transition.fromState.lstrip('#')
-            to_node = transition.toState.lstrip('#')
+            fromNode = transition.fromState.lstrip('#')
+            toNode = transition.toState.lstrip('#')
             label = transition.label[:3]
-            if from_node == to_node:  # Self-transition
-                tikz_code.append(f"\\draw[->, loop above] ({from_node}) to node[sloped, above] {{{label}}} ({to_node});")
+            if fromNode == toNode:  # Self-transition
+                tikzCode.append(f"\\draw[->, loop above] ({fromNode}) to node[sloped, above] {{{label}}} ({toNode});")
             else:
-                tikz_code.append(f"\\draw[->] ({from_node}) -- node[midway, sloped, above] {{{label}}} ({to_node});")
+                tikzCode.append(f"\\draw[->] ({fromNode}) -- node[midway, sloped, above] {{{label}}} ({toNode});")
 
-        tikz_code.append(r"\end{tikzpicture}")
-        tikz_code.append(r"\end{document}")
+        tikzCode.append(r"\end{tikzpicture}")
+        tikzCode.append(r"\end{document}")
 
-        return '\n'.join(tikz_code)
+        return '\n'.join(tikzCode)
 
 
 
@@ -357,20 +338,20 @@ class SugiyamaFramework:
     def dfsForSort(self, node, visited, stack):
         visited.add(node)
         for transition in node.transitions:
-            neighbor_id = transition.toState
-            neighbor_node = self.fsm.states[neighbor_id]
-            if neighbor_node not in visited:
-                self.dfsForSort(neighbor_node, visited, stack)
+            neighbourID = transition.toState
+            neighbourNode = self.fsm.states[neighbourID]
+            if neighbourNode not in visited:
+                self.dfsForSort(neighbourNode, visited, stack)
         stack.append(node)
 
     def topologicalSort(self):
         visited = set()
         stack = []
-        for state_id, state in self.fsm.states.items():
+        for stateID, state in self.fsm.states.items():
             if state not in visited:
                 self.dfsForSort(state, visited, stack)
-        sorted_nodes = [node.id for node in reversed(stack)]
-        return sorted_nodes
+        sortedNodes = [node.id for node in reversed(stack)]
+        return sortedNodes
     
 
 
@@ -406,14 +387,10 @@ class SugiyamaFramework:
     def insertDummyVertices(self, longEdges):
         dummyID = "#0"
         counter = 0
-
         for edge in longEdges:
-            
             self.fsm.transitions.remove(edge)
-            
             source = edge.fromState
             end = edge.toState
-
             sourceLayer = self.fsm.states[source].layerValue
             endLayer = self.fsm.states[end].layerValue
 

@@ -17,8 +17,8 @@ class JSONInputParser:
                                     "id": {
                                         "type": "string",
                                         "pattern": "^(?!#0).+$","maxLength": 5
-                                    },
-                                    "name": { "type": "string" } 
+                                    }
+                                   
                                     },
                                     "required": ["id"]
                                 }

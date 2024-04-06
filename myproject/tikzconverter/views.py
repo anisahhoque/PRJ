@@ -8,14 +8,14 @@ from django.conf import settings
 
 
 def index(request):
-    hyperparameters = {'repulsionwidth': 2, 'width': 4, 'height': 5} 
+    hyperparameters = {'bend':15, 'width': 4, 'height': 5} 
     if request.method == 'POST':
         mode = request.POST.get('mode')
         uploaded_file = request.FILES.get('json_file')
-        repulsionwidth = int(request.POST.get('repulsionwidth', hyperparameters['repulsionwidth']))
+        bend= int(request.POST.get('width', hyperparameters['bend']))
         width = int(request.POST.get('width', hyperparameters['width']))
         height = int(request.POST.get('height', hyperparameters['height']))
-        hyperparameters['repulsionwidth'] = repulsionwidth
+        
         hyperparameters['width'] = width
         hyperparameters['height'] = height
         if uploaded_file:

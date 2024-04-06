@@ -25,7 +25,7 @@ def main(fileName, hyperparameters):
     else:
         raise ValueError("Invalid JSON data")
     
-    storeFramework.hyperparameters['repulsionwidth'] = hyperparameters['repulsionwidth']
+    storeFramework.hyperparameters['bend'] = hyperparameters['bend']
     storeFramework.hyperparameters['width'] = hyperparameters['width']
     storeFramework.hyperparameters['height'] = hyperparameters['height']
     
@@ -38,6 +38,6 @@ def main(fileName, hyperparameters):
 
 
     storeFramework.vertexArrangement(storelayers)
-    tikzCode = storeFramework.generate_tikz_code()
-    storeFramework.compile_tikz(tikzCode)
+    tikzCode = storeFramework.generateTikzCode()
+    storeFramework.compileTikz(tikzCode)
     return tikzCode
