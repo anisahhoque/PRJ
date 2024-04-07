@@ -14,8 +14,6 @@ def main(fileName, hyperparameters):
     store = parse.validateJSON()
 
     if parse.inputValidate == True:
-        
-        print(parse.checkValidFSM(store))
         if parse.checkValidFSM(store):
             
             storeFramework = SugiyamaFramework(store)

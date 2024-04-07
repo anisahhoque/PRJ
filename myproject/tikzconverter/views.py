@@ -1,8 +1,6 @@
 from django.shortcuts import render
 from .fsm.main import main
 from django.http import JsonResponse
-import os
-
 from django.conf import settings
 
 
