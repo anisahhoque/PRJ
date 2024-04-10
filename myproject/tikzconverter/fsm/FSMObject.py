@@ -70,6 +70,9 @@ class FSMNode:
         else:
             self.transitions.append(transition)
 
+    def removeTransition(self,transition):
+        self.transitions.remove(transition)
+
     def setAsInitial(self):
         self.isInitial = True
 
@@ -81,6 +84,12 @@ class FSMNode:
     
     def setYCoord(self,y):
         self.y = y
+    
+    def getXCoord(self):
+        return self.x
+    
+    def getYCoord(self):
+        return self.y
 
 class FSMTransition:
     def __init__(self,label,fromState,toState):
@@ -89,6 +98,15 @@ class FSMTransition:
         self.toState = toState
         self.typeDummy = False
 
+    def getLabel(self):
+        return self.label
+    def getFrom(self):
+        return self.fromState
+    def getTo(self):
+        return self.toState
+    def getIsDummy(self):
+        return self.typeDummy
+    
 class FSMDummyNode(FSMNode):
     def __init__(self, idValue, layerValue):
         super().__init__(idValue)

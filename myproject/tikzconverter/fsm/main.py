@@ -29,15 +29,13 @@ def main(fileName, hyperparameters):
     storeFramework.hyperparameters['orientation'] = hyperparameters['orientation']
    
     while len(storeFramework.detectCycles()) > 0:
-        
-        storeFramework.detectCycles()
-
+        continue
    
     storelayers = storeFramework.layerAssignment()
 
 
-    storeFramework.vertexArrangement(storelayers)
- 
+    sortedLayers = storeFramework.vertexArrangement(storelayers)
+    storeFramework.coordinateAssignment(sortedLayers)
     tikzCode = storeFramework.generateTikzCode()
     storeFramework.compileTikz(tikzCode)
     return tikzCode

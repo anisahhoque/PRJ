@@ -1,4 +1,4 @@
-import json
+
 import jsonschema 
 from .Converter import FSMConverter
 
@@ -49,12 +49,8 @@ class JSONInputParser:
     def validateJSON(self):
         try:
             jsonschema.validate(instance=self.inputJSON, schema=self.FSMSchema)
-           
             self.inputValidate = True
-            print(self.inputValidate)
-            
             valid = validJSON(self.inputJSON) #store validjson in a seperate object
-            
             storeObject = self.runConversion(valid)
             return storeObject
 
@@ -78,26 +74,20 @@ class JSONInputParser:
     #postprocessing
     def checkValidFSM(self, FSMObject):
         if FSMObject.getInitial() not in FSMObject.getStates().values():
-            print(FSMObject.getInitial())
-            print(FSMObject.getStates().keys())
-            
             return False
         
         if any(item not in FSMObject.getStates().values() for item in FSMObject.getAcceptingStates()):
-           
             return False
 
         if len(set(FSMObject.getStates().keys())) != len(FSMObject.getStates().keys()):
-            
             return False
         
         for i in FSMObject.getTransitions():
             if i.fromState not in FSMObject.getStates().keys() or i.toState not in FSMObject.getStates().keys():
-               
                 return False
+            
         for i in FSMObject.getSelfTransitions():
-            if not(i.fromState == i.toState and i.toState in FSMObject.getStates().keys()) :
-                
+            if i.fromState not in FSMObject.getStates().keys():
                 return False
             
         visited = set()
@@ -111,18 +101,15 @@ class JSONInputParser:
         
         while stack:
             state = stack.pop()
-            
             if state not in visited:
                 visited.add(state)
-                
-                # Explore neighboring states
                 for transition in FSMObject.getTransitions():
                     if transition.fromState == state:
                         stack.append(transition.toState)
         
       
         if  len(visited) != len(FSMObject.getStates().keys()):
-            print("hi6")
+            
             return False    
         return True
 

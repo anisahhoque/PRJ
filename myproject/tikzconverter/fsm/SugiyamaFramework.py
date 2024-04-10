@@ -18,7 +18,7 @@ class SugiyamaFramework:
         path.append(node.id)
 
         for transition in node.transitions:
-            neighbourID = transition.toState
+            neighbourID = transition.getTo()
             if neighbourID in path:
                 cycleStart = path.index(neighbourID)
                 cycle = path[cycleStart:]
@@ -46,10 +46,12 @@ class SugiyamaFramework:
         toState = transition.toState
         transition.fromState = toState
         transition.toState = fromState
+
+
         fromNode = self.fsm.states[fromState]
         toNode = self.fsm.states[toState]
 
-        #update nodes
+        #update node objects
         fromNode.transitions.remove(transition)
         toNode.transitions.append(transition)
 
@@ -63,6 +65,7 @@ class SugiyamaFramework:
         storeLong = self.identifyLongEdges()
         self.insertDummyVertices(storeLong) 
 
+    
         layers = {}
         for nodeID, node in self.fsm.states.items():
             layerValue = node.layerValue
@@ -71,11 +74,11 @@ class SugiyamaFramework:
 
             layers[layerValue].append(nodeID)
             self.assignXCoords(nodeID=nodeID,layer=layerValue)
-        barySorted = self.bary(layers)
+        
 
-        return barySorted
+        return layers
     
-    def bary(self, layers):
+    def barycenter(self, layers):
         barycenters = {}
         for layer, vertices in layers.items():
             if layer == 0:
@@ -84,7 +87,7 @@ class SugiyamaFramework:
                 previouslayer = layers[layer-1]
                 for vertex in vertices:
                     neighbours = self.getNeighboursInPreviousLayer(vertex, layers)
-                    if neighbours:  # Check if the neighbor list is not empty
+                    if neighbours:  
                         neighbourPos = [previouslayer.index(neighbour) for neighbour in neighbours]
                         barycenter = sum(neighbourPos) / len(neighbours)
                     barycenters[vertex] = barycenter
@@ -93,31 +96,12 @@ class SugiyamaFramework:
         for layer, vertices in layers.items():
             sortedVertices = sorted(vertices, key=lambda vertex: barycenters.get(vertex, 0))
             sortedLayers[layer] = sortedVertices
-
-
         return sortedLayers
 
 
  
 
-    
 
-    def dummyArrangement(self):
-        storeLong = self.identifyLongEdges()
-        
-        self.insertDummyVertices(storeLong) 
-
-        layers = {}
-        for nodeID, node in self.fsm.dummyNodes.items():
-
-            layerValue = node.layerValue
-            if layerValue not in layers:
-                layers[layerValue] = []
-
-            
-            layers[layerValue].append(nodeID)
-
-            self.assignXCoords(nodeID=nodeID,layer=layerValue)
             
 
 
@@ -127,7 +111,84 @@ class SugiyamaFramework:
         else:
             self.fsm.states[nodeID].setXCoord(layer*self.hyperparameters['width'])
 
-    def vertexArrangement(self, sortedLayers):
+    def vertexArrangement(self, layers):
+        sortedLayers = self.barycenter(layers)
+        return sortedLayers
+    def coordinateAssignment(self,sortedLayers):
+        if self.hyperparameters['orientation'] == 'vertical':
+            vertexSeperation = self.hyperparameters['width']
+        else:
+            vertexSeperation = self.hyperparameters['height']
+
+        priorities = {}
+        for layer, nodes in sortedLayers.items():
+            for node in nodes:
+                priority = 0
+                if node in self.fsm.dummyNodes:
+                    priority += 1000  
+                
+                if layer > 0:
+                    neighbourCount = len(self.getNeighboursInPreviousLayer(node,sortedLayers))
+                    priority += neighbourCount
+
+
+                priorities[node] = priority
+
+
+        maxHeight = max(len(x) for x in sortedLayers.values())
+        yCoord = ((maxHeight -1)*vertexSeperation/2)*-1
+        for layer, nodes in sortedLayers.items():
+            sortedNodes = sorted(nodes, key=lambda x: priorities[x], reverse=True)
+            lenAdjust = len(sortedNodes)
+            yCoord = maxHeight*vertexSeperation/2
+            yCoord = yCoord - (vertexSeperation*((lenAdjust//2)))
+            
+            for node in sortedNodes:
+               
+                self.fsm.states[node].y = yCoord
+                yCoord += vertexSeperation 
+                
+
+        
+        barycenters = {}
+        for layer, vertices in sortedLayers.items():
+            if layer == 0:
+                for i in vertices:
+                    barycenters[i] = maxHeight*vertexSeperation/2
+            else:
+                for vertex in vertices:
+                    neighbours = self.getNeighboursInPreviousLayer(vertex, sortedLayers)
+                    if neighbours:
+                        neighbourPos = [self.fsm.states[neighbour].getYCoord() for neighbour in neighbours]
+                        barycenter = sum(neighbourPos) / len(neighbours)
+                        barycenters[vertex] = barycenter
+  
+
+        
+        for layer, nodes in sortedLayers.items():
+            sortedNodes = sorted(nodes, key=lambda x: (barycenters[x], priorities[x]), reverse=True)
+            print(sortedNodes)
+   
+            assignedYCoords = set()
+            for node in sortedNodes:
+                yCoord = barycenters[node]
+                
+                # Adjust the y-coordinate if it conflicts with already assigned coordinates
+                while yCoord in assignedYCoords:
+                    yCoord += vertexSeperation
+                
+                self.fsm.states[node].y = yCoord
+                assignedYCoords.add(yCoord)
+
+
+
+        if self.hyperparameters['orientation'] == 'vertical':
+            
+            for state in self.fsm.states.values():
+                state.x, state.y = state.y, state.x*-1
+
+
+    def coordinateAssignment1(self,sortedLayers):
         if self.hyperparameters['orientation'] == 'vertical':
             vertexSeperation = self.hyperparameters['width']
         else:
@@ -161,15 +222,15 @@ class SugiyamaFramework:
                 node = sortedNodes[i]
                 if node not in self.fsm.dummyNodes:
                     continue
-                dummyY = self.fsm.states[node].y
+                dummyY = self.fsm.states[node].getYCoord()
                 for transition in self.fsm.transitions:
                     if transition.fromState == node:
                         neighbor = transition.toState
                         if layer < len(sortedLayers) - 1 and neighbor in sortedLayers[layer + 1]:
-                            neighbourY = self.fsm.states[neighbor].y
+                            neighbourY = self.fsm.states[neighbor].getYCoord()
                             if abs(dummyY - neighbourY) > vertexSeperation:
                             
-                                self.fsm.states[neighbor].y = dummyY
+                                self.fsm.states[neighbor].setYCoord(dummyY)
 
 
         if self.hyperparameters['orientation'] == 'vertical':
@@ -236,8 +297,8 @@ class SugiyamaFramework:
 
   
         for nodeID, node in self.fsm.states.items():
-            x = node.x
-            y = node.y
+            x = node.getXCoord()
+            y = node.getYCoord()
             if type(self.fsm.states[nodeID]) is FSMDummyNode:
                 continue
             
@@ -255,7 +316,7 @@ class SugiyamaFramework:
         for longEdge, dummyNodes in self.fsm.longEdgeMap.items():
             sourceNode = self.fsm.states[longEdge.fromState]
             endNode = self.fsm.states[longEdge.toState]
-            transitionLabel = longEdge.label
+            transitionLabel = longEdge.getLabel()
             sourceLabel = sourceNode.id.lstrip('#')
             endLabel = endNode.id.lstrip('#')
             if abs(sourceNode.layerValue - endNode.layerValue) == 1:
@@ -283,23 +344,22 @@ class SugiyamaFramework:
 
       
         for transition in self.fsm.transitions:
-            label = transition.label
-            if transition.typeDummy == True:
+            label = transition.getLabel()
+            if transition.getIsDummy()== True:
                 continue
-            elif transition.typeDummy == False:
-                fromNode = transition.fromState
-                toNode = transition.toState 
-
-
-                fromN = transition.fromState.lstrip('#')
-                toN= transition.toState.lstrip('#')
+            elif transition.getIsDummy()== False:
+                fromNode = transition.getFrom()
+                toNode = transition.getTo()
+                fromN = fromNode.lstrip('#')
+                toN= toNode.lstrip('#')
 
                 tikzCode.append(f"\\path ({fromN}) edge node[midway, sloped, above] {{{label}}} ({toN});")
         
         for transition in self.fsm.selfTransitions:
-            fromNode = transition.fromState.lstrip('#')
-            toNode = transition.toState.lstrip('#')
-            label = transition.label[:3]
+            fromNode = transition.getFrom().lstrip('#')
+            toNode = transition.getTo().lstrip('#')
+            label = transition.getLabel()
+
             if fromNode == toNode:  
                 tikzCode.append(f"\\draw[->, loop above] ({fromNode}) to node[sloped, above] {{{label}}} ({toNode});")
             else:
@@ -318,15 +378,20 @@ class SugiyamaFramework:
     def getNeighboursInPreviousLayer(self,nodeID,layers):
         previousLayer = self.fsm.states[nodeID].layerValue - 1
         potentialNeighbours = layers[previousLayer]
-        neighbours = [n for n in potentialNeighbours if any(x.toState == nodeID for x in self.fsm.states[n].transitions)]
-        return neighbours
+        #neighbours = [n for n in potentialNeighbours if any(x.getTo()== nodeID for x in self.fsm.states[n].transitions)]
+        incomingNeighbours = [n for n in potentialNeighbours if any(x.getTo() == nodeID for x in self.fsm.states[n].transitions)]
+        outgoingNeighbours = [n for n in potentialNeighbours if any(x.getTo() == n for x in self.fsm.states[nodeID].transitions)]
+        
+        incomingNeighbours.extend(outgoingNeighbours)
+        return incomingNeighbours
+
 
 
 
     def dfsForSort(self, node, visited, stack):
         visited.add(node)
         for transition in node.transitions:
-            neighbourID = transition.toState
+            neighbourID = transition.getTo()
             neighbourNode = self.fsm.states[neighbourID]
             if neighbourNode not in visited:
                 self.dfsForSort(neighbourNode, visited, stack)
@@ -351,12 +416,11 @@ class SugiyamaFramework:
         self.fsm.states[source].layerValue = 0
         storeSort.remove(source)
         for i in storeSort:
-            pred = self.findPredeccessors(i)
+            pred = self.findPredeccessors(i) 
             predLayer = [layers[p] for p in pred]
             maxPredLayer = max(predLayer)
             layers[i] = maxPredLayer + 1
             self.fsm.states[i].layerValue = maxPredLayer + 1
-
         return(layers)
     
 
@@ -366,7 +430,7 @@ class SugiyamaFramework:
         for i in nodes:
             currLayerVal = self.fsm.states[i].layerValue
             for j in self.fsm.states[i].transitions:
-                transLayerVal = self.fsm.states[j.toState].layerValue
+                transLayerVal = self.fsm.states[j.getTo()].layerValue
                 if abs(transLayerVal - currLayerVal) > 1 :
                     storeLongEdges.append(j)
         return (storeLongEdges)
@@ -378,7 +442,7 @@ class SugiyamaFramework:
         for edge in longEdges:
             self.fsm.transitions.remove(edge)
             source = edge.fromState
-            end = edge.toState
+            end = edge.getTo()
             sourceLayer = self.fsm.states[source].layerValue
             endLayer = self.fsm.states[end].layerValue
 
@@ -442,7 +506,7 @@ class SugiyamaFramework:
     def findPredeccessors(self,nodeID):
         predeccessors = []
         for i in self.fsm.transitions:
-            if i.toState == nodeID:
+            if i.getTo() == nodeID:
                 predeccessors.append(i.fromState)
         return(predeccessors)
                 
