@@ -91,6 +91,7 @@ class SugiyamaFramework:
                         neighbourPos = [previouslayer.index(neighbour) for neighbour in neighbours]
                         barycenter = sum(neighbourPos) / len(neighbours)
                     barycenters[vertex] = barycenter
+            layers[layer].reverse()
         
         sortedLayers = {}
         for layer, vertices in layers.items():
@@ -173,7 +174,7 @@ class SugiyamaFramework:
             for node in sortedNodes:
                 yCoord = barycenters[node]
                 
-                # Adjust the y-coordinate if it conflicts with already assigned coordinates
+                
                 while yCoord in assignedYCoords:
                     yCoord += vertexSeperation
                 
@@ -262,14 +263,12 @@ class SugiyamaFramework:
         try:
             subprocess.run(['pdflatex', '-interaction=nonstopmode', tempTexPath], check=True, cwd=mediaFolder)
         except subprocess.CalledProcessError as e:
-            print(f"Error compiling TikZ code: {e}")
-            return
+            return e
         tempPDFPath = os.path.join(mediaFolder, 'temp.pdf')
         if os.path.exists(tempPDFPath):
             subprocess.run(['mv', tempPDFPath, outputFilePath], check=True)
-            print(f"TikZ code compiled to {outputFileName}")
         else:
-            print("Error: temp.pdf file not generated.")
+            print("temp.pdf does not exist")
 
 
 
@@ -319,28 +318,25 @@ class SugiyamaFramework:
             transitionLabel = longEdge.getLabel()
             sourceLabel = sourceNode.id.lstrip('#')
             endLabel = endNode.id.lstrip('#')
-            if abs(sourceNode.layerValue - endNode.layerValue) == 1:
-                if sourceNode.layerValue < endNode.layerValue:
-                    tikzCode.append(f"\\draw[->, rounded corners={bend}pt] ({sourceLabel}) to[bend left=30] node[midway, sloped, above] {{{transitionLabel}}} ({endLabel});")
-                else:
-                    tikzCode.append(f"\\draw[->, rounded corners={bend}pt] ({sourceLabel}) to[bend right=30] node[midway, sloped, above] {{{transitionLabel}}} ({endLabel});")
+            #if abs(sourceNode.layerValue - endNode.layerValue) == 1:
+            #    if sourceNode.layerValue < endNode.layerValue:
+            #        tikzCode.append(f"\\draw[->, rounded corners={bend}pt] ({sourceLabel}) to[bend left=30] node[midway, sloped, above] {{{transitionLabel}}} ({endLabel});")
+            #    else:
+            #        tikzCode.append(f"\\draw[->, rounded corners={bend}pt] ({sourceLabel}) to[bend right=30] node[midway, sloped, above] {{{transitionLabel}}} ({endLabel});")
+            #else:
+
+            if type(sourceNode) is FSMDummyNode:
+                edgePath = f"({sourceNode.x},{sourceNode.y})"
             else:
-
-                if type(sourceNode) is FSMDummyNode:
-                    edgePath = f"({sourceNode.x},{sourceNode.y})"
-                else:
-                    edgePath = f"({sourceLabel})"
-
-                for dummyNode in dummyNodes[1:-1]: 
-                    edgePath += f" -- ({dummyNode.x},{dummyNode.y})"
-
-                if type(endNode) is FSMDummyNode:
-                    edgePath += f" -- ({endNode.x},{endNode.y})"
-                else:
-                    edgePath += f" -- ({endLabel})"
-
-                
-                tikzCode.append(f"\\draw[->, rounded corners={bend}pt] {edgePath} node[midway, sloped, above] {{{transitionLabel}}};")
+                edgePath = f"({sourceLabel})"
+            for dummyNode in dummyNodes[1:-1]: 
+                edgePath += f" -- ({dummyNode.x},{dummyNode.y})"
+            if type(endNode) is FSMDummyNode:
+                edgePath += f" -- ({endNode.x},{endNode.y})"
+            else:
+                edgePath += f" -- ({endLabel})"
+            
+            tikzCode.append(f"\\draw[->, rounded corners={bend}pt] {edgePath} node[midway, sloped, above] {{{transitionLabel}}};")
 
       
         for transition in self.fsm.transitions:
@@ -352,8 +348,16 @@ class SugiyamaFramework:
                 toNode = transition.getTo()
                 fromN = fromNode.lstrip('#')
                 toN= toNode.lstrip('#')
-
-                tikzCode.append(f"\\path ({fromN}) edge node[midway, sloped, above] {{{label}}} ({toN});")
+                check = False
+                for i in self.fsm.transitions:
+                    if i.fromState == toNode and i.toState == fromNode:
+                        check = True
+                        if self.fsm.states[fromNode].layerValue < self.fsm.states[toNode].layerValue:
+                            tikzCode.append(f"\\draw[->, rounded corners={bend}pt] ({fromN}) to[bend left=30] node[midway, above, sloped] {{{transitionLabel}}} ({toN});")
+                        else:
+                            tikzCode.append(f"\\draw[->, rounded corners={bend}pt] ({fromN}) to[bend left=30] node[midway, below, sloped] {{{transitionLabel}}} ({toN});")
+                if check == False:
+                    tikzCode.append(f"\\path ({fromN}) edge node[midway, sloped, above] {{{label}}} ({toN});")
         
         for transition in self.fsm.selfTransitions:
             fromNode = transition.getFrom().lstrip('#')
@@ -362,8 +366,7 @@ class SugiyamaFramework:
 
             if fromNode == toNode:  
                 tikzCode.append(f"\\draw[->, loop above] ({fromNode}) to node[sloped, above] {{{label}}} ({toNode});")
-            else:
-                tikzCode.append(f"\\draw[->] ({fromNode}) -- node[midway, sloped, above] {{{label}}} ({toNode});")
+
 
         tikzCode.append(r"\end{tikzpicture}")
         tikzCode.append(r"\end{document}")
@@ -378,7 +381,7 @@ class SugiyamaFramework:
     def getNeighboursInPreviousLayer(self,nodeID,layers):
         previousLayer = self.fsm.states[nodeID].layerValue - 1
         potentialNeighbours = layers[previousLayer]
-        #neighbours = [n for n in potentialNeighbours if any(x.getTo()== nodeID for x in self.fsm.states[n].transitions)]
+        
         incomingNeighbours = [n for n in potentialNeighbours if any(x.getTo() == nodeID for x in self.fsm.states[n].transitions)]
         outgoingNeighbours = [n for n in potentialNeighbours if any(x.getTo() == n for x in self.fsm.states[nodeID].transitions)]
         
@@ -510,6 +513,5 @@ class SugiyamaFramework:
                 predeccessors.append(i.fromState)
         return(predeccessors)
                 
-
 
 

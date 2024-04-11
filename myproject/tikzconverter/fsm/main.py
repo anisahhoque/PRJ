@@ -2,6 +2,7 @@ from .JSONParser import JSONInputParser
 from .SugiyamaFramework import SugiyamaFramework
 import json
 
+
 def loadJSON(fileContent):
     return json.loads(fileContent)
 
