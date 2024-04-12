@@ -36,3 +36,5 @@ python manage.py runserver
   "initialState": "#1",
   "acceptingStates": ["#2"]
 }
+
+"id" and "label" are constrained to a length of 5. "id" cannot begin with '#0'
