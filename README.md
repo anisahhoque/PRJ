@@ -16,6 +16,7 @@ pip install -r requirements.txt
 python manage.py runserver
 
 ## Expected JSON input format
+'''json
 {
   "states": [
     {
