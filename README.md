@@ -1,4 +1,4 @@
-#JSON To TikZ Converter
+# JSON To TikZ Converter
 This  provides a web-based tool that allows you to upload JSON files of finite state machines and convert them into TikZ code.
 
 ## Features
